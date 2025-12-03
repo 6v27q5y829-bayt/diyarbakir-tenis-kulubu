@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Diyarbakır Tenis Kulübü</title>
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#065f46">
+    <meta name="apple-mobile-web-app-title" content="DTK App">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1165/1165187.png">
+    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/1165/1165187.png">
+
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f0fdf4; overscroll-behavior-y: none; }
+        .transition-all { transition-property: all; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 200ms; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .logo-container { width: 40px; height: 40px; overflow: hidden; border-radius: 50%; border: 2px solid #bef264; }
+        .logo-img { width: 100%; height: 100%; object-fit: cover; }
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+        
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .animate-slide-up { animation: slideUp 0.5s ease-out forwards; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        // --- İKONLAR ---
+        const icons = {
+            TennisBall: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10"/></svg>,
+            UserCheck: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>,
+            UserX: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="18" y1="8" x2="23" y2="13"/><line x1="23" y1="8" x2="18" y2="13"/></svg>,
+            Plus: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+            Minus: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+            ChevronLeft: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>,
+            ChevronRight: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>,
+            Trash2: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>,
+            Calendar: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+            Lock: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>,
+            Unlock: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>,
+            Clock: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+            UserSquare: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="12" cy="10" r="3"/><path d="M7 21v-2a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"/></svg>,
+            LogOut: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>,
+            Layers: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>,
+            Users: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
+            Phone: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>,
+            Info: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>,
+            UserPlus: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>,
+            Mail: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>,
+            Eye: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
+            Briefcase: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>,
+            Check: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
+            Edit: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
+            AlertCircle: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>,
+            Square: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/></svg>,
+            CheckSquare: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        };
+
+        const Icon = ({ name, size = 20, className }) => {
+            const IconComponent = icons[name];
+            return IconComponent ? <IconComponent width={size} height={size} className={className} /> : null;
+        };
+
+        // --- YARDIMCI FONKSİYONLAR ---
+        const getDayNameFromDate = (dateStr) => {
+            const date = new Date(dateStr);
+            const days = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
+            return days[date.getDay()];
+        };
+        const getStatusColor = (status) => status === 'present' ? 'bg-lime-500' : status === 'absent' ? 'bg-red-500' : 'bg-gray-200';
+        const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
+
+        // --- BİLEŞENLER ---
+        
+        // 1. Header Bileşeni
+        const Header = ({ title, showBack = false, onBack, userRole, currentInstructor, onShowLogin, onLogout }) => (
+            <div className="bg-emerald-800 p-4 text-white shadow-lg flex justify-between items-center sticky top-0 z-30">
+                <div className="flex items-center gap-3">
+                    {showBack ? (
+                        <button onClick={onBack} className="bg-white/10 p-2 rounded-full hover:bg-white/20 transition-colors"><Icon name="ChevronLeft" size={24} /></button>
+                    ) : (
+                        <div className="logo-container bg-white flex items-center justify-center shadow-lg"><img src="https://via.placeholder.com/100x100?text=DTK" alt="Logo" className="logo-img" /></div>
+                    )}
+                    <div>
+                        <h1 className="text-lg font-bold leading-tight">{title}</h1>
+                        {!showBack && <p className="text-[10px] text-emerald-200 uppercase tracking-wider">{userRole === 'admin' ? 'YÖNETİCİ MODU' : userRole === 'instructor' ? `EĞİTMEN: ${currentInstructor ? currentInstructor.toUpperCase() : ''}` : 'MİSAFİR MODU'}</p>}
+                    </div>
+                </div>
+                {userRole === 'guest' ? (
+                    <button onClick={onShowLogin} className="p-2 rounded-full bg-emerald-900 border-emerald-700 text-emerald-400 border-2"><Icon name="Lock" size={20} /></button>
+                ) : (
+                    <button onClick={onLogout} className="p-2 rounded-full bg-red-500 text-white border-2 border-red-400 shadow-lg" title="Çıkış Yap"><Icon name="LogOut" size={20} /></button>
+                )}
+            </div>
+        );
+
+        // 2. Horizontal Calendar
+        const HorizontalCalendar = ({ selectedDate, onSelectDate }) => {
+            const days = useMemo(() => {
+                const result = [];
+                const current = new Date(selectedDate);
+                for (let i = -14; i <= 14; i++) {
+                    const d = new Date(current);
+                    d.setDate(current.getDate() + i);
+                    if (d.getDay() === 0 || d.getDay() === 6) result.push(d);
+                }
+                return result.sort((a, b) => a - b);
+            }, [selectedDate]);
+
+            return (
+                <div className="flex gap-2 overflow-x-auto no-scrollbar py-3 px-4 bg-emerald-900 text-white shadow-inner">
+                    {days.map((date, idx) => {
+                        const dateStr = date.toISOString().split('T')[0];
+                        const isSelected = dateStr === selectedDate;
+                        const dateObj = new Date(dateStr);
+                        const dayName = new Intl.DateTimeFormat('tr-TR', { weekday: 'short' }).format(dateObj);
+                        const dayNum = dateObj.getDate();
+                        const monthName = new Intl.DateTimeFormat('tr-TR', { month: 'short' }).format(dateObj);
+                        const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
+
+                        return (
+                            <button key={idx} onClick={() => onSelectDate(dateStr)} className={`flex flex-col items-center justify-center min-w-[54px] p-2 rounded-xl transition-all border border-transparent ${isSelected ? 'bg-lime-400 text-emerald-900 font-bold shadow-lg scale-105' : 'hover:bg-emerald-800 text-emerald-200'} ${isWeekend ? 'border-b-4 border-b-yellow-400/50' : ''}`}>
+                                <span className="text-[10px] uppercase opacity-80">{dayName}</span>
+                                <span className="text-xl font-bold">{dayNum}</span>
+                                <span className="text-[9px] opacity-70 uppercase">{monthName}</span>
+                            </button>
+                        );
+                    })}
+                </div>
+            );
+        };
+
+        // --- YENİ ONAY PENCERESİ ---
+        const ConfirmationDialog = ({ isOpen, message, onConfirm, onCancel }) => {
+            if (!isOpen) return null;
+            return (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[60] animate-[fadeIn_0.1s_ease-out]">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xs overflow-hidden p-5 text-center">
+                        <div className="bg-red-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-red-500">
+                            <Icon name="AlertCircle" size={32}/>
+                        </div>
+                        <h3 className="text-lg font-bold text-gray-800 mb-2">Emin misiniz?</h3>
+                        <p className="text-sm text-gray-600 mb-6 leading-relaxed">{message}</p>
+                        <div className="flex gap-3">
+                            <button onClick={onCancel} className="flex-1 py-3 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200">İptal</button>
+                            <button onClick={onConfirm} className="flex-1 py-3 bg-red-500 text-white rounded-xl font-bold hover:bg-red-600">Evet</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const WelcomeScreen = ({ onAdminClick, onInstructorClick }) => {
+            return (
+                <div className="min-h-screen bg-emerald-900 flex flex-col items-center justify-center p-6 relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+                        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-lime-400 rounded-full blur-[100px]"></div>
+                        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-emerald-400 rounded-full blur-[100px]"></div>
+                    </div>
+
+                    <div className="bg-white/10 backdrop-blur-md p-8 rounded-3xl w-full max-w-sm shadow-2xl border border-white/20 animate-slide-up flex flex-col items-center z-10">
+                        <div className="bg-white p-4 rounded-full shadow-xl mb-6">
+                            <img src="https://via.placeholder.com/150x150?text=DTK" alt="Logo" className="w-24 h-24 object-cover rounded-full" />
+                        </div>
+                        <h1 className="text-3xl font-bold text-white text-center mb-2">Diyarbakır</h1>
+                        <h2 className="text-xl font-medium text-emerald-200 text-center mb-8 tracking-widest">TENİS KULÜBÜ</h2>
+                        
+                        <div className="w-full space-y-4">
+                            <button onClick={onInstructorClick} className="w-full bg-lime-500 hover:bg-lime-400 text-emerald-900 font-bold py-4 px-6 rounded-2xl transition-all transform hover:scale-[1.02] shadow-lg flex items-center justify-center gap-3">
+                                <Icon name="UserSquare" size={24} /> EĞİTMEN GİRİŞİ
+                            </button>
+                            <button onClick={onAdminClick} className="w-full bg-white/10 hover:bg-white/20 text-white font-semibold py-4 px-6 rounded-2xl transition-all border border-white/20 flex items-center justify-center gap-3">
+                                <Icon name="Lock" size={20} /> YÖNETİCİ GİRİŞİ
+                            </button>
+                        </div>
+                        <p className="mt-8 text-emerald-400/60 text-xs">© 2025 DTK App v4.5</p>
+                    </div>
+                </div>
+            );
+        };
+
+        // 3. Profil Modal
+        const StudentProfileModal = ({ student, groups, onClose }) => {
+            const [viewDate, setViewDate] = useState(new Date());
+            const changeMonth = (offset) => { const d = new Date(viewDate); d.setMonth(d.getMonth() + offset); setViewDate(d); };
+            const year = viewDate.getFullYear();
+            const month = viewDate.getMonth();
+            const daysInMonth = getDaysInMonth(year, month);
+            const firstDay = new Date(year, month, 1).getDay();
+            const startingSlot = firstDay === 0 ? 6 : firstDay - 1;
+            
+            // DETAYLI LİSTE
+            const detailedRecords = useMemo(() => {
+                const details = [];
+                groups.forEach(g => {
+                    if(g.players.some(pl => pl.id === student.id)) {
+                        Object.entries(g.records).forEach(([ds, st]) => {
+                            const s = st[student.id];
+                            if(s) {
+                                const rd = new Date(ds);
+                                if(rd.getFullYear() === year && rd.getMonth() === month) {
+                                    details.push({ date: ds, status: s, groupName: g.name });
+                                }
+                            }
+                        });
+                    }
+                });
+                return details.sort((a, b) => new Date(a.date) - new Date(b.date));
+            }, [groups, student, year, month]);
+
+            const pCount = detailedRecords.filter(r => r.status === 'present').length;
+            const aCount = detailedRecords.filter(r => r.status === 'absent').length;
+
+            return (
+                <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-2xl w-full max-w-sm overflow-hidden max-h-[80vh] flex flex-col">
+                        <div className="bg-emerald-600 p-4 text-white flex justify-between flex-shrink-0"><div><h2 className="text-xl font-bold">{student.name}</h2><p className="text-xs opacity-80">{student.phone} | {student.age} Yaş</p></div><button onClick={onClose}>X</button></div>
+                        <div className="p-4 overflow-y-auto">
+                            <div className="flex gap-2 mb-4 text-center"><div className="flex-1 bg-lime-50 p-2 rounded border border-lime-200"><div className="text-xl font-bold text-lime-600">{pCount}</div><div className="text-[10px]">BU AY KATILIM</div></div><div className="flex-1 bg-red-50 p-2 rounded border border-red-200"><div className="text-xl font-bold text-red-600">{aCount}</div><div className="text-[10px]">BU AY YOK</div></div></div>
+                            <div className="flex justify-between mb-2"><button onClick={() => changeMonth(-1)}><Icon name="ChevronLeft"/></button><span className="font-bold">{new Intl.DateTimeFormat('tr-TR', { month: 'long', year: 'numeric' }).format(viewDate)}</span><button onClick={() => changeMonth(1)}><Icon name="ChevronRight"/></button></div>
+                            <div className="grid grid-cols-7 gap-1 text-center text-xs mb-1 font-bold text-gray-400"><span>Pt</span><span>Sa</span><span>Ça</span><span>Pe</span><span>Cu</span><span>Ct</span><span>Pa</span></div>
+                            <div className="grid grid-cols-7 gap-1 mb-4">
+                                {Array.from({length: startingSlot}).map((_, i) => <div key={`e-${i}`} />)}
+                                {Array.from({length: daysInMonth}).map((_, i) => {
+                                    const d = i + 1; 
+                                    const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                                    const record = detailedRecords.find(r => r.date === dateStr);
+                                    const status = record ? record.status : null;
+                                    return <div key={d} className="aspect-square flex items-center justify-center rounded border border-transparent hover:border-gray-200 relative"><span className="text-xs text-gray-600">{d}</span>{status==='present'&&<div className="absolute inset-0 bg-lime-500/30 rounded border border-lime-500"></div>}{status==='absent'&&<div className="absolute inset-0 bg-red-500/30 rounded border border-red-500"></div>}</div>
+                                })}
+                            </div>
+                            {/* DETAYLI LİSTE */}
+                            <div className="space-y-2 border-t pt-2">
+                                {detailedRecords.length === 0 ? <p className="text-xs text-center text-gray-400">Bu ay kayıt yok.</p> : detailedRecords.map((r, idx) => (
+                                    <div key={idx} className="flex justify-between text-xs p-2 bg-gray-50 rounded">
+                                        <span className="text-gray-500">{new Intl.DateTimeFormat('tr-TR', {day:'numeric', month:'long'}).format(new Date(r.date))}</span>
+                                        <span className="text-gray-400 truncate max-w-[100px]">{r.groupName}</span>
+                                        <span className={`font-bold ${r.status === 'present' ? 'text-lime-600' : 'text-red-600'}`}>{r.status === 'present' ? 'GELDİ' : 'GELMEDİ'}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const App = () => {
+            // AUTH STATE
+            const [userRole, setUserRole] = useState(null); 
+            const [currentInstructor, setCurrentInstructor] = useState(null);
+            const [loginModalType, setLoginModalType] = useState(null); 
+            
+            // CONFIRMATION STATE
+            const [confirmModal, setConfirmModal] = useState({ isOpen: false, message: '', onConfirm: null });
+            
+            // APP STATE
+            const [selectedDate, setSelectedDate] = useState(() => {
+                const today = new Date();
+                const offset = today.getTimezoneOffset();
+                const localDate = new Date(today.getTime() - (offset * 60 * 1000));
+                return localDate.toISOString().split('T')[0];
+            });
+
+            // DATA
+            const [groups, setGroups] = useState(() => {
+                const saved = localStorage.getItem('diyarbakir_tennis_v4');
+                return saved ? JSON.parse(saved) : [];
+            });
+
+            const [definedInstructors, setDefinedInstructors] = useState(() => {
+                const saved = localStorage.getItem('diyarbakir_tennis_instructors_v2');
+                if (saved) return JSON.parse(saved);
+                return [
+                    { id: 1, name: "Mert Hoca", email: "mert@dtk.com", password: "123" },
+                    { id: 2, name: "Selin Hoca", email: "selin@dtk.com", password: null }
+                ];
+            });
+
+            const [registeredStudents, setRegisteredStudents] = useState(() => {
+                const saved = localStorage.getItem('diyarbakir_tennis_students');
+                return saved ? JSON.parse(saved) : [];
+            });
+
+            // UI STATES
+            const [activeGroup, setActiveGroup] = useState(null);
+            const [isModalOpen, setIsModalOpen] = useState(false); 
+            const [isStudentModalOpen, setIsStudentModalOpen] = useState(false); 
+            const [isAddExistingStudentModalOpen, setIsAddExistingStudentModalOpen] = useState(false);
+            const [isInstructorModalOpen, setIsInstructorModalOpen] = useState(false); 
+            const [adminTab, setAdminTab] = useState('schedule');
+            const [viewingProfileStudent, setViewingProfileStudent] = useState(null);
+
+            // Form States
+            const [newGroupName, setNewGroupName] = useState("");
+            const [newInstructorName, setNewInstructorName] = useState("");
+            const [tempSchedule, setTempSchedule] = useState([]);
+            const [tempDay, setTempDay] = useState("Cumartesi");
+            const [tempTime, setTempTime] = useState("11:00");
+            const [newStudentName, setNewStudentName] = useState("");
+            const [newStudentAge, setNewStudentAge] = useState("");
+            const [newStudentPhone, setNewStudentPhone] = useState("");
+            const [selectedGroupIdForStudent, setSelectedGroupIdForStudent] = useState("");
+            const [targetGroupForAdd, setTargetGroupForAdd] = useState(null);
+            const [memberToAddId, setMemberToAddId] = useState("");
+            const [newInstName, setNewInstName] = useState("");
+            const [newInstEmail, setNewInstEmail] = useState("");
+
+            // EDITING STATE
+            const [editingGroup, setEditingGroup] = useState(null);
+
+            useEffect(() => { localStorage.setItem('diyarbakir_tennis_v4', JSON.stringify(groups)); }, [groups]);
+            useEffect(() => { localStorage.setItem('diyarbakir_tennis_instructors_v2', JSON.stringify(definedInstructors)); }, [definedInstructors]);
+            useEffect(() => { localStorage.setItem('diyarbakir_tennis_students', JSON.stringify(registeredStudents)); }, [registeredStudents]);
+
+            const validHours = ["11:00", "12:00", "13:00", "14:00", "15:00", "16:00"];
+
+            // --- CONFIRMATION HELPERS ---
+            const askConfirmation = (message, action) => {
+                setConfirmModal({ isOpen: true, message, onConfirm: action });
+            };
+
+            const closeConfirmModal = () => {
+                setConfirmModal({ isOpen: false, message: '', onConfirm: null });
+            };
+
+            const executeConfirm = () => {
+                if (confirmModal.onConfirm) confirmModal.onConfirm();
+                closeConfirmModal();
+            };
+
+            // --- AUTH & CRUD LOGIC ---
+            const handleLogout = () => { setUserRole(null); setCurrentInstructor(null); setActiveGroup(null); };
+
+            const addScheduleSlot = () => {
+                const exists = tempSchedule.some(s => s.day === tempDay && s.time === tempTime);
+                if(!exists) setTempSchedule([...tempSchedule, {day: tempDay, time: tempTime}]);
+            };
+            const removeScheduleSlot = (idx) => setTempSchedule(tempSchedule.filter((_, i) => i !== idx));
+
+            const openEditGroupModal = (group, e) => {
+                e.stopPropagation();
+                setEditingGroup(group);
+                setNewGroupName(group.name);
+                setNewInstructorName(group.instructor);
+                setTempSchedule(group.schedule);
+                setIsModalOpen(true);
+            };
+
+            const handleSaveGroup = (e) => {
+                e.preventDefault();
+                if(tempSchedule.length === 0) { alert("Lütfen saat ekleyiniz."); return; }
+                
+                if (editingGroup) {
+                    const updatedGroups = groups.map(g => 
+                        g.id === editingGroup.id 
+                        ? { ...g, name: newGroupName, instructor: newInstructorName, schedule: tempSchedule } 
+                        : g
+                    );
+                    setGroups(updatedGroups);
+                } else {
+                    const newGroup = { 
+                        id: Date.now(), 
+                        name: newGroupName, 
+                        instructor: newInstructorName, 
+                        schedule: tempSchedule, 
+                        players: [], 
+                        records: {} 
+                    };
+                    setGroups([...groups, newGroup]);
+                }
+                setIsModalOpen(false); 
+                setEditingGroup(null);
+                setNewGroupName(""); 
+                setNewInstructorName(""); 
+                setTempSchedule([]);
+            };
+
+            const handleAddInstructor = (e) => {
+                e.preventDefault();
+                if (definedInstructors.some(i => i.email === newInstEmail)) { alert("Bu e-posta zaten kayıtlı."); return; }
+                const newInst = { id: Date.now(), name: newInstName, email: newInstEmail, password: null };
+                setDefinedInstructors([...definedInstructors, newInst]);
+                setIsInstructorModalOpen(false); setNewInstName(""); setNewInstEmail("");
+                alert("Eğitmen başarıyla eklendi. Eğitmen, e-posta adresiyle giriş yaparken kendi şifresini oluşturacaktır.");
+            };
+
+            const handleDeleteGroup = (id, e) => {
+                if(e) e.stopPropagation();
+                askConfirmation("Bu grubu ve içindeki tüm ders programını silmek istediğinize emin misiniz?", () => {
+                    setGroups(groups.filter(g => g.id !== id));
+                });
+            };
+
+            const addPlayerLogic = (targetGroupId, studentName, studentId = null, studentAge = "", studentPhone = "") => {
+                const newId = studentId || Date.now();
+                const newPlayer = { id: newId, name: studentName, age: studentAge, phone: studentPhone };
+                
+                const updatedGroups = groups.map(g => {
+                    if (g.id.toString() === targetGroupId.toString()) {
+                        if(g.players.some(p => p.name === studentName)) return g;
+                        return { ...g, players: [...g.players, newPlayer] };
+                    }
+                    return g;
+                });
+                setGroups(updatedGroups);
+
+                if(!registeredStudents.some(rs => rs.id === newId)) {
+                     setRegisteredStudents(prev => [...prev, newPlayer]);
+                }
+            };
+
+            const handleRemovePlayerFromGroup = (groupId, playerId) => {
+                askConfirmation("Bu öğrenciyi gruptan çıkarmak istediğinize emin misiniz?", () => {
+                    const updatedGroups = groups.map(g => {
+                        if (g.id === groupId) {
+                            return { ...g, players: g.players.filter(p => p.id !== playerId) };
+                        }
+                        return g;
+                    });
+                    setGroups(updatedGroups);
+                    if(activeGroup && activeGroup.id === groupId) {
+                         setActiveGroup(updatedGroups.find(g => g.id === groupId));
+                    }
+                });
+            };
+
+            const handleAddPlayerFromDetail = (e) => {
+                e.preventDefault();
+                if(newStudentName.trim()) addPlayerLogic(activeGroup.id, newStudentName.trim(), null, newStudentAge, newStudentPhone);
+                setNewStudentName(""); setNewStudentAge(""); setNewStudentPhone("");
+            };
+
+            const handleAddStudentGlobal = (e) => {
+                e.preventDefault();
+                if(newStudentName.trim()) {
+                     const newId = Date.now();
+                     if (selectedGroupIdForStudent) {
+                         addPlayerLogic(selectedGroupIdForStudent, newStudentName.trim(), newId, newStudentAge, newStudentPhone);
+                     } else {
+                         const newPlayer = { id: newId, name: newStudentName.trim(), age: newStudentAge, phone: newStudentPhone };
+                         setRegisteredStudents(prev => [...prev, newPlayer]);
+                     }
+                }
+                setIsStudentModalOpen(false); setNewStudentName(""); setNewStudentAge(""); setNewStudentPhone(""); setSelectedGroupIdForStudent("");
+            };
+
+            const handleAddExistingStudentToGroup = (e) => {
+                e.preventDefault();
+                if (!targetGroupForAdd || !memberToAddId) return;
+                const student = registeredStudents.find(s => s.id.toString() === memberToAddId.toString());
+                if(student) {
+                    const updatedGroups = groups.map(g => {
+                        if (g.id === targetGroupForAdd.id) {
+                            if(g.players.some(p => p.id === student.id)) return g;
+                            return { ...g, players: [...g.players, student] };
+                        }
+                        return g;
+                    });
+                    setGroups(updatedGroups);
+                }
+                setIsAddExistingStudentModalOpen(false); setMemberToAddId(""); setTargetGroupForAdd(null);
+            };
+
+            const handleDeleteInstructor = (id) => {
+                const inst = definedInstructors.find(i => i.id === id);
+                if (!inst) return;
+                
+                const assignedGroups = groups.filter(g => g.instructor === inst.name);
+                const confirmMessage = assignedGroups.length > 0 
+                    ? `Bu eğitmenin yönettiği ${assignedGroups.length} grup var. Eğitmen silindiğinde bu gruplar eğitmensiz kalacak. Devam etmek istiyor musunuz?`
+                    : `${inst.name} adlı eğitmeni silmek istediğinize emin misiniz?`;
+
+                askConfirmation(confirmMessage, () => {
+                    setDefinedInstructors(prev => prev.filter(i => i.id !== id));
+                });
+            };
+
+            const handleDeleteStudentFromRegistry = (studentId) => {
+                askConfirmation("Bu öğrenciyi sistemden silerseniz, dahil olduğu tüm gruplardan da çıkarılacaktır. Onaylıyor musunuz?", () => {
+                    setGroups(groups.map(g => ({ ...g, players: g.players.filter(p => p.id !== studentId) })));
+                    setRegisteredStudents(prev => prev.filter(s => s.id !== studentId));
+                });
+            };
+
+            const getAttendanceInfo = (group, date) => {
+                const recs = group.records[date];
+                if (!recs) return { taken: false, presentCount: 0 };
+                const taken = Object.keys(recs).length > 0;
+                const presentCount = Object.values(recs).filter(s => s === 'present').length;
+                return { taken, presentCount };
+            };
+
+            const toggleAttendance = (playerId, status) => {
+                const updatedGroups = groups.map(g => {
+                    if (g.id === activeGroup.id) {
+                        const recs = g.records[selectedDate] || {};
+                        const newStatus = recs[playerId] === status ? null : status;
+                        return { ...g, records: { ...g.records, [selectedDate]: { ...recs, [playerId]: newStatus } } };
+                    }
+                    return g;
+                });
+                setGroups(updatedGroups);
+                if(activeGroup) setActiveGroup(updatedGroups.find(g => g.id === activeGroup.id));
+            };
+
+            // --- LOGIN POPUP ---
+            const LoginPopup = () => {
+                const [step, setStep] = useState('email'); 
+                const [email, setEmail] = useState("");
+                const [password, setPassword] = useState("");
+                const [confirmPass, setConfirmPass] = useState("");
+                const [error, setError] = useState("");
+                const [foundInst, setFoundInst] = useState(null);
+
+                useEffect(() => {
+                    if(loginModalType) {
+                        setStep('email'); setEmail(""); setPassword(""); setConfirmPass(""); setError(""); setFoundInst(null);
+                    }
+                }, [loginModalType]);
+
+                const handleAdminLogin = (e) => {
+                    e.preventDefault();
+                    if (password === "2121") {
+                        setUserRole('admin'); setLoginModalType(null); setAdminTab('schedule');
+                    } else setError("Hatalı şifre!");
+                };
+
+                const checkEmail = (e) => {
+                    e.preventDefault();
+                    const inst = definedInstructors.find(i => i.email === email);
+                    if (inst) {
+                        setFoundInst(inst);
+                        if (inst.password) setStep('password');
+                        else setStep('set-password');
+                        setError("");
+                    } else setError("Bu e-posta ile kayıtlı eğitmen bulunamadı.");
+                };
+
+                const verifyPassword = (e) => {
+                    e.preventDefault();
+                    if (foundInst.password === password) {
+                        setUserRole('instructor'); setCurrentInstructor(foundInst.name); setLoginModalType(null);
+                    } else setError("Şifre yanlış.");
+                };
+
+                const setNewPassword = (e) => {
+                    e.preventDefault();
+                    if (password.length < 4) { setError("Şifre en az 4 karakter olmalı."); return; }
+                    if (password !== confirmPass) { setError("Şifreler uyuşmuyor."); return; }
+                    const updatedInstructors = definedInstructors.map(i => i.id === foundInst.id ? { ...i, password: password } : i);
+                    setDefinedInstructors(updatedInstructors);
+                    setUserRole('instructor'); setCurrentInstructor(foundInst.name); setLoginModalType(null);
+                };
+
+                if (!loginModalType) return null;
+
+                return (
+                    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-[fadeIn_0.2s_ease-out]">
+                        <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden p-6 relative">
+                            <button onClick={() => setLoginModalType(null)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 font-bold">✕</button>
+                            {loginModalType === 'admin' && (
+                                <div className="text-center">
+                                    <div className="bg-emerald-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-emerald-600"><Icon name="Lock" size={32}/></div>
+                                    <h2 className="text-xl font-bold text-gray-800 mb-1">Yönetici Girişi</h2>
+                                    <form onSubmit={handleAdminLogin} className="space-y-4 mt-6">
+                                        <input type="password" autoFocus className="w-full text-center text-2xl tracking-widest border-2 border-gray-200 rounded-xl p-3 focus:border-emerald-500 outline-none" placeholder="••••" maxLength="4" value={password} onChange={e => setPassword(e.target.value)} />
+                                        {error && <p className="text-red-500 text-sm">{error}</p>}
+                                        <button className="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold hover:bg-emerald-700 transition-colors">Giriş Yap</button>
+                                    </form>
+                                </div>
+                            )}
+                            {loginModalType === 'instructor' && (
+                                <div className="text-center">
+                                    <div className="bg-lime-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-lime-700"><Icon name="UserSquare" size={32}/></div>
+                                    <h2 className="text-xl font-bold text-gray-800 mb-6">Eğitmen Girişi</h2>
+                                    {step === 'email' && (
+                                        <form onSubmit={checkEmail} className="space-y-4">
+                                            <div className="text-left"><label className="text-xs font-bold text-gray-400 ml-1">E-POSTA ADRESİ</label><div className="relative"><Icon name="Mail" size={18} className="absolute left-3 top-3.5 text-gray-400" /><input type="email" required className="w-full border-2 border-gray-200 rounded-xl p-3 pl-10 outline-none focus:border-lime-500" placeholder="ornek@dtk.com" value={email} onChange={e => setEmail(e.target.value)} /></div></div>
+                                            {error && <p className="text-red-500 text-sm">{error}</p>}
+                                            <button className="w-full bg-lime-500 text-white py-3 rounded-xl font-bold hover:bg-lime-600 transition-colors">Devam Et</button>
+                                        </form>
+                                    )}
+                                    {step === 'password' && (
+                                        <form onSubmit={verifyPassword} className="space-y-4">
+                                            <p className="text-sm text-gray-600">Merhaba, <b>{foundInst?.name}</b></p>
+                                            <input type="password" autoFocus className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-lime-500" placeholder="Şifreniz" value={password} onChange={e => setPassword(e.target.value)} />
+                                            {error && <p className="text-red-500 text-sm">{error}</p>}
+                                            <button className="w-full bg-lime-500 text-white py-3 rounded-xl font-bold hover:bg-lime-600 transition-colors">Giriş Yap</button>
+                                        </form>
+                                    )}
+                                    {step === 'set-password' && (
+                                        <form onSubmit={setNewPassword} className="space-y-4">
+                                            <div className="bg-yellow-50 text-yellow-800 p-3 rounded-lg text-sm mb-4 border border-yellow-200">İlk girişiniz olduğu için lütfen yeni bir şifre belirleyin.</div>
+                                            <input type="password" required className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-lime-500" placeholder="Yeni Şifre" value={password} onChange={e => setPassword(e.target.value)} />
+                                            <input type="password" required className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-lime-500" placeholder="Şifre Tekrar" value={confirmPass} onChange={e => setConfirmPass(e.target.value)} />
+                                            {error && <p className="text-red-500 text-sm">{error}</p>}
+                                            <button className="w-full bg-lime-500 text-white py-3 rounded-xl font-bold hover:bg-lime-600 transition-colors">Şifreyi Kaydet</button>
+                                        </form>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                );
+            };
+
+            const AdminScheduleGrid = ({ dailyGroups, instructors, onGroupClick }) => (
+                <div className="p-4 pb-4 overflow-x-auto">
+                    <div className="min-w-[800px]">
+                        <div className="flex border-b border-gray-200">
+                            <div className="w-20 flex-shrink-0 p-2 border-r border-gray-100 bg-gray-50 text-gray-400 font-bold text-xs text-center sticky left-0 z-10">SAAT</div>
+                            {instructors.map(inst => (<div key={inst.id} className="flex-1 p-2 border-r border-gray-100 bg-emerald-50 text-emerald-800 font-bold text-xs text-center truncate">{inst.name}</div>))}
+                        </div>
+                        {validHours.map(hour => (
+                            <div key={hour} className="flex border-b border-gray-100 h-24">
+                                <div className="w-20 flex-shrink-0 p-2 border-r border-gray-100 bg-gray-50 flex items-center justify-center text-sm font-bold text-gray-500 sticky left-0 z-10 shadow-sm">{hour}</div>
+                                {instructors.map(inst => {
+                                    const group = dailyGroups.find(g => g.instructor === inst.name && g.schedule.some(s => s.time === hour && s.day === getDayNameFromDate(selectedDate)));
+                                    
+                                    let content = null;
+                                    if (group) {
+                                        const { taken, presentCount } = getAttendanceInfo(group, selectedDate);
+                                        const bgClass = taken ? "bg-emerald-100 border-emerald-500" : "bg-blue-50 border-blue-300";
+                                        
+                                        content = (
+                                            <div onClick={() => onGroupClick(group)} className={`w-full h-full border-l-4 rounded p-2 cursor-pointer transition-colors flex flex-col justify-center gap-1 shadow-sm overflow-hidden ${bgClass} hover:opacity-80`}>
+                                                <div className="font-bold text-xs text-gray-900 truncate leading-tight">{group.name}</div>
+                                                <div className="text-[10px] text-gray-700 flex items-center gap-1">
+                                                    <Icon name="Users" size={10} /> 
+                                                    {taken ? <span className="font-bold text-emerald-700">{presentCount}/{group.players.length} Katıldı</span> : <span>{group.players.length} Oyuncu</span>}
+                                                </div>
+                                                {taken && <div className="absolute top-1 right-1 w-2 h-2 bg-emerald-500 rounded-full"></div>}
+                                            </div>
+                                        );
+                                    } else {
+                                        content = <div className="w-full h-full hover:bg-gray-50/50 transition-colors"></div>;
+                                    }
+
+                                    return (
+                                        <div key={`${inst.id}-${hour}`} className="flex-1 border-r border-gray-100 p-1 relative group-cell min-w-[120px]">
+                                            {content}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+
+            const AdminGroupsView = () => (
+                <div className="p-4 grid grid-cols-1 gap-4 pb-4">
+                    {groups.map(group => (
+                        <div key={group.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center justify-between">
+                            <div onClick={() => setActiveGroup(group)} className="flex-1 cursor-pointer">
+                                <div className="flex items-center gap-2 mb-1"><h3 className="font-bold text-gray-800">{group.name}</h3></div>
+                                <div className="flex flex-wrap gap-1 mb-1">{group.schedule.map((s, idx) => (<span key={idx} className="bg-gray-100 text-xs px-2 py-0.5 rounded text-gray-500">{s.day.slice(0,3)} {s.time}</span>))}</div>
+                                <p className="text-sm text-emerald-600 font-medium">{group.instructor}</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <button onClick={(e) => openEditGroupModal(group, e)} className="p-3 bg-blue-50 text-blue-500 rounded-xl hover:bg-blue-500 hover:text-white transition-colors"><Icon name="Edit" size={18} /></button>
+                                <button onClick={(e) => {e.stopPropagation(); setTargetGroupForAdd(group); setIsAddExistingStudentModalOpen(true);}} className="p-3 bg-emerald-50 text-emerald-500 rounded-xl hover:bg-emerald-500 hover:text-white transition-colors"><Icon name="UserPlus" size={18} /></button>
+                                <button onClick={(e) => handleDeleteGroup(group.id, e)} className="p-3 bg-red-50 text-red-400 rounded-xl hover:bg-red-500 hover:text-white transition-colors"><Icon name="Trash2" size={18} /></button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            );
+
+            const AdminStudentsView = () => {
+                const [search, setSearch] = useState("");
+                const filtered = registeredStudents.filter(s => s.name.toLowerCase().includes(search.toLowerCase()));
+                return (
+                    <div className="p-4 pb-4">
+                        <input placeholder="Öğrenci Ara..." value={search} onChange={e=>setSearch(e.target.value)} className="w-full border p-3 rounded-xl mb-4 outline-none" />
+                        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                            <div className="grid grid-cols-12 bg-gray-50 p-3 text-xs font-bold text-gray-500 border-b"><div className="col-span-4">Ad Soyad</div><div className="col-span-3">Tel</div><div className="col-span-3">Grup</div><div className="col-span-2 text-center">İşlem</div></div>
+                            {filtered.map(s => {
+                                const gs = groups.filter(g => g.players.some(p => p.id === s.id)).map(g => g.name).join(", ") || "-";
+                                return (
+                                    <div key={s.id} className="grid grid-cols-12 p-3 text-sm items-center border-b hover:bg-gray-50">
+                                        <div className="col-span-4 font-medium truncate">{s.name}</div>
+                                        <div className="col-span-3 text-xs text-gray-500 truncate">{s.phone}</div>
+                                        <div className="col-span-3 text-xs text-gray-500 truncate">{gs}</div>
+                                        <div className="col-span-2 flex justify-center gap-1">
+                                            <button onClick={() => setViewingProfileStudent(s)} className="p-1.5 bg-blue-50 text-blue-500 rounded hover:bg-blue-500 hover:text-white"><Icon name="Info" size={14} /></button>
+                                            <button onClick={() => handleDeleteStudentFromRegistry(s.id)} className="p-1.5 bg-red-50 text-red-500 rounded hover:bg-red-500 hover:text-white"><Icon name="Trash2" size={14} /></button>
+                                        </div>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    </div>
+                );
+            };
+
+            const AdminInstructorsView = () => (
+                <div className="p-4 pb-32 space-y-3">
+                    {definedInstructors.map(inst => (
+                        <div key={inst.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-orange-100 p-2 rounded-full text-orange-600"><Icon name="UserSquare" size={20} /></div>
+                                <div><div className="font-bold text-gray-800">{inst.name}</div><div className="text-xs text-gray-500">{inst.email}</div></div>
+                            </div>
+                            <button onClick={() => handleDeleteInstructor(inst.id)} className="p-2 text-red-400 bg-red-50 rounded-lg hover:bg-red-500 hover:text-white transition-colors"><Icon name="Trash2" size={18} /></button>
+                        </div>
+                    ))}
+                </div>
+            );
+
+            const StandardView = ({ dailyGroups }) => {
+                const currentDayName = getDayNameFromDate(selectedDate);
+                let filtered = dailyGroups.filter(g => g.schedule.some(s => s.day === currentDayName));
+                if (userRole === 'instructor') filtered = filtered.filter(g => g.instructor === currentInstructor);
+                
+                if (filtered.length === 0) return <div className="text-center py-20 text-gray-400 border-2 border-dashed m-4 rounded-xl">Ders Yok</div>;
+
+                return (
+                    <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 pb-4">
+                        {filtered.map(g => {
+                            const time = g.schedule.find(s => s.day === currentDayName)?.time || "";
+                            const { taken, presentCount } = getAttendanceInfo(g, selectedDate);
+                            const borderClass = taken ? "border-emerald-500" : "border-emerald-100";
+                            const badge = taken ? <div className="absolute top-2 left-2 bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">Yoklama Alındı</div> : null;
+
+                            return (
+                                <div key={g.id} onClick={() => setActiveGroup(g)} className={`bg-white rounded-2xl p-5 shadow-sm border hover:shadow-xl cursor-pointer relative group ${borderClass}`}>
+                                    {badge}
+                                    <div className="absolute top-0 right-0 bg-emerald-100 text-emerald-800 px-3 py-1 rounded-bl-xl text-xs font-bold font-mono">{time}</div>
+                                    <h3 className="text-lg font-bold mb-1 mt-2">{g.name}</h3>
+                                    <div className="text-sm text-gray-500 mb-3">{currentDayName}</div>
+                                    {userRole !== 'instructor' && <div className="text-sm font-medium text-emerald-600 mb-4">{g.instructor}</div>}
+                                    <div className="flex justify-between border-t pt-3 text-xs text-gray-500">
+                                        {taken ? <div className="text-emerald-600 font-bold">{presentCount}/{g.players.length} Katıldı</div> : <div>{g.players.length} Oyuncu</div>}
+                                        <span className="font-bold text-emerald-600">Detay ></span>
+                                    </div>
+                                </div>
+                            )
+                        })}
+                    </div>
+                );
+            };
+
+            // RENDER LOGIC
+            if (!userRole) {
+                return (
+                    <>
+                        <WelcomeScreen onAdminClick={() => setLoginModalType('admin')} onInstructorClick={() => setLoginModalType('instructor')} />
+                        <LoginPopup />
+                    </>
+                );
+            }
+
+            const currentDayName = getDayNameFromDate(selectedDate);
+            const dailyGroups = groups.filter(g => g.schedule.some(s => s.day === currentDayName));
+
+            // DETAY SAYFASI RENDER
+            if (activeGroup) {
+                const relevantSlot = activeGroup.schedule.find(s => s.day === currentDayName);
+                const displayTime = relevantSlot ? relevantSlot.time : (activeGroup.schedule[0]?.time || "--");
+                const displayDay = relevantSlot ? relevantSlot.day : (activeGroup.schedule[0]?.day || "--");
+                const recs = activeGroup.records[selectedDate] || {};
+                const presentCount = activeGroup.players.filter(p => recs[p.id] === 'present').length;
+                const absentCount = activeGroup.players.filter(p => recs[p.id] === 'absent').length;
+                const isAdmin = userRole === 'admin';
+                const isInstructor = userRole === 'instructor' && currentInstructor === activeGroup.instructor;
+                const canTakeAttendance = isAdmin || isInstructor;
+
+                return (
+                    <div className="min-h-screen bg-white flex flex-col">
+                        <Header title={activeGroup.name} showBack={true} onBack={() => setActiveGroup(null)} userRole={userRole} currentInstructor={currentInstructor} onShowLogin={() => setShowLogin(true)} onLogout={handleLogout} />
+                        <div className="p-4 bg-emerald-50 border-b border-emerald-100"><div className="flex justify-between items-center"><div><div className="font-bold text-emerald-900 flex items-center gap-2"><Icon name="UserSquare" size={18} /> {activeGroup.instructor}</div><div className="text-xs text-emerald-600 mt-1 flex gap-2"><span>{displayDay}</span> • <span>{displayTime}</span></div></div><div className="text-right"><div className="text-xs font-bold text-gray-400">KATILIM</div><div className="flex gap-2 text-sm font-bold"><span className="text-lime-600">{presentCount} Var</span><span className="text-red-500">{absentCount} Yok</span></div></div></div></div>
+                        {isAdmin && (<div className="p-3 bg-gray-50 border-b"><form onSubmit={handleAddPlayerFromDetail} className="space-y-3"><div className="text-xs font-bold text-gray-400">HIZLI ÜYE EKLE</div><div className="flex gap-2"><input type="text" value={newStudentName} onChange={(e) => setNewStudentName(e.target.value)} placeholder="Ad Soyad..." className="flex-1 border rounded px-2 py-2 text-sm outline-none focus:border-emerald-500" /><input type="number" value={newStudentAge} onChange={(e) => setNewStudentAge(e.target.value)} placeholder="Yaş" className="w-16 border rounded px-2 py-2 text-sm outline-none focus:border-emerald-500" /><input type="tel" value={newStudentPhone} onChange={(e) => setNewStudentPhone(e.target.value)} placeholder="Tel" className="w-24 border rounded px-2 py-2 text-sm outline-none focus:border-emerald-500" /><button type="submit" className="bg-emerald-600 text-white px-3 rounded hover:bg-emerald-700"><Icon name="Plus"/></button></div></form></div>)}
+                        <div className="flex-1 overflow-y-auto p-4 space-y-2 pb-20">
+                            {activeGroup.players.map(p => { 
+                                const status = recs[p.id]; 
+                                return (
+                                    <div key={p.id} className="flex items-center justify-between bg-white border rounded-xl p-3 shadow-sm">
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-3">
+                                                <div className={`w-3 h-3 rounded-full ${getStatusColor(status)}`}></div>
+                                                <span className="font-semibold text-gray-700">{p.name}</span>
+                                            </div>
+                                            {(p.age || p.phone) && <div className="text-[10px] text-gray-400 ml-6 flex gap-2">{p.age && <span>{p.age} Yaş</span>}{p.phone && <span>• {p.phone}</span>}</div>}
+                                        </div>
+                                        <div className="flex gap-2">
+                                            {canTakeAttendance && (
+                                                <>
+                                                <button onClick={() => toggleAttendance(p.id, 'present')} className={`p-2 rounded-lg border ${status === 'present' ? 'bg-lime-500 text-white border-lime-600' : 'bg-gray-50 text-gray-400'}`}><Icon name="UserCheck" size={18}/></button>
+                                                <button onClick={() => toggleAttendance(p.id, 'absent')} className={`p-2 rounded-lg border ${status === 'absent' ? 'bg-red-500 text-white border-red-600' : 'bg-gray-50 text-gray-400'}`}><Icon name="UserX" size={18}/></button>
+                                                </>
+                                            )}
+                                            {isAdmin && (
+                                                <>
+                                                <div className="w-px h-full bg-gray-200 mx-1"></div>
+                                                <button onClick={() => handleRemovePlayerFromGroup(activeGroup.id, p.id)} className="p-2 rounded-lg border bg-white text-gray-300 border-gray-200 hover:border-red-200 hover:text-red-500 hover:bg-red-50 transition-colors"><Icon name="Trash2" size={18}/></button>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+                                ); 
+                            })}
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="min-h-screen bg-gray-50 flex flex-col relative">
+                    <Header title="Diyarbakır Tenis Kulübü" onBack={() => {}} userRole={userRole} currentInstructor={currentInstructor} onShowLogin={() => setShowLogin(true)} onLogout={handleLogout} />
+                    
+                    <div className="flex-1 overflow-y-auto">
+                        {userRole === 'admin' ? (
+                            <>
+                                {adminTab === 'schedule' && (
+                                    <>
+                                        <HorizontalCalendar selectedDate={selectedDate} onSelectDate={setSelectedDate} />
+                                        <div className="px-4 mt-4"><h2 className="text-xl font-bold text-gray-800 flex items-center gap-2"><span className="text-emerald-600">{currentDayName}</span> Programı</h2></div>
+                                        <AdminScheduleGrid dailyGroups={dailyGroups} instructors={definedInstructors} onGroupClick={setActiveGroup} />
+                                    </>
+                                )}
+                                {adminTab === 'groups' && <AdminGroupsView />}
+                                {adminTab === 'students' && <AdminStudentsView />}
+                                {adminTab === 'instructors' && <AdminInstructorsView />}
+                            </>
+                        ) : (
+                            <>
+                                <HorizontalCalendar selectedDate={selectedDate} onSelectDate={setSelectedDate} />
+                                <div className="px-4 mt-4"><h2 className="text-xl font-bold text-gray-800 flex items-center gap-2"><span className="text-emerald-600">{currentDayName}</span> Programı</h2></div>
+                                <StandardView dailyGroups={dailyGroups} />
+                            </>
+                        )}
+                    </div>
+
+                    {userRole === 'admin' && (
+                        <>
+                            <div className="fixed bottom-6 right-6 z-40 flex flex-col gap-3">
+                                {adminTab === 'groups' && <button onClick={() => setIsModalOpen(true)} className="bg-lime-500 text-emerald-900 p-4 rounded-full shadow-xl hover:scale-110 transition-transform"><Icon name="Plus" size={32} /></button>}
+                                {adminTab === 'students' && <button onClick={() => setIsStudentModalOpen(true)} className="bg-emerald-600 text-white p-4 rounded-full shadow-xl hover:scale-110 transition-transform"><Icon name="Plus" size={32} /></button>}
+                                {adminTab === 'instructors' && <button onClick={() => setIsInstructorModalOpen(true)} className="bg-orange-500 text-white p-4 rounded-full shadow-xl hover:scale-110 transition-transform"><Icon name="UserPlus" size={24} /></button>}
+                            </div>
+                            <div className="bg-white border-t p-2 fixed bottom-0 w-full flex justify-around shadow-[0_-5px_20px_rgba(0,0,0,0.05)] z-20 pb-safe">
+                                <button onClick={() => setAdminTab('schedule')} className={`flex flex-col items-center p-2 rounded-xl flex-1 transition-colors ${adminTab === 'schedule' ? 'text-emerald-700 bg-emerald-50' : 'text-gray-400'}`}><Icon name="Calendar" size={24} /><span className="text-xs font-bold mt-1">Program</span></button>
+                                <button onClick={() => setAdminTab('groups')} className={`flex flex-col items-center p-2 rounded-xl flex-1 transition-colors ${adminTab === 'groups' ? 'text-emerald-700 bg-emerald-50' : 'text-gray-400'}`}><Icon name="Layers" size={24} /><span className="text-xs font-bold mt-1">Gruplar</span></button>
+                                <button onClick={() => setAdminTab('students')} className={`flex flex-col items-center p-2 rounded-xl flex-1 transition-colors ${adminTab === 'students' ? 'text-emerald-700 bg-emerald-50' : 'text-gray-400'}`}><Icon name="Users" size={24} /><span className="text-xs font-bold mt-1">Öğrenciler</span></button>
+                                <button onClick={() => setAdminTab('instructors')} className={`flex flex-col items-center p-2 rounded-xl flex-1 transition-colors ${adminTab === 'instructors' ? 'text-emerald-700 bg-emerald-50' : 'text-gray-400'}`}><Icon name="UserSquare" size={24} /><span className="text-xs font-bold mt-1">Eğitmenler</span></button>
+                            </div>
+                        </>
+                    )}
+
+                    {/* MODALLER - GRUP EKLEME */}
+                    {isModalOpen && (
+                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                            <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+                                <h3 className="text-lg font-bold mb-4">{editingGroup ? "Grubu Düzenle" : "Yeni Grup Oluşturucu"}</h3>
+                                <form onSubmit={handleSaveGroup} className="space-y-3">
+                                    <input required placeholder="Grup Adı" value={newGroupName} onChange={e=>setNewGroupName(e.target.value)} className="w-full border p-3 rounded-xl outline-none focus:border-emerald-500" />
+                                    <div className="relative">
+                                        <select required className="w-full border p-3 rounded-xl outline-none focus:border-emerald-500 bg-white" value={newInstructorName} onChange={e=>setNewInstructorName(e.target.value)}>
+                                            <option value="">Eğitmen Seç...</option>
+                                            {definedInstructors.map(inst => <option key={inst.id} value={inst.name}>{inst.name}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="p-3 bg-gray-50 rounded-xl space-y-2 border border-gray-100">
+                                        <div className="text-xs font-bold text-gray-500">PROGRAM EKLE</div>
+                                        <div className="flex gap-2">
+                                            <select value={tempDay} onChange={e=>setTempDay(e.target.value)} className="flex-1 border p-2 rounded-lg outline-none bg-white text-sm"><option value="Cumartesi">Cumartesi</option><option value="Pazar">Pazar</option></select>
+                                            <select value={tempTime} onChange={e=>setTempTime(e.target.value)} className="w-24 border p-2 rounded-lg outline-none bg-white text-sm">{validHours.map(h => <option key={h} value={h}>{h}</option>)}</select>
+                                            <button type="button" onClick={addScheduleSlot} className="bg-lime-500 text-white px-3 rounded-lg"><Icon name="Plus" size={18} /></button>
+                                        </div>
+                                        <div className="space-y-1 mt-2">{tempSchedule.map((s, idx) => (<div key={idx} className="flex justify-between items-center bg-white border border-emerald-100 p-2 rounded-lg"><span className="text-sm font-medium text-gray-700">{s.day} - {s.time}</span><button type="button" onClick={() => removeScheduleSlot(idx)} className="text-red-400 hover:text-red-600"><Icon name="Minus" size={16} /></button></div>))}{tempSchedule.length === 0 && <div className="text-xs text-gray-400 text-center py-2">Henüz saat eklenmedi.</div>}</div>
+                                    </div>
+                                    <div className="flex gap-2 mt-4">
+                                        <button type="button" onClick={() => { setIsModalOpen(false); setEditingGroup(null); }} className="flex-1 py-3 bg-gray-100 rounded-xl text-gray-600">İptal</button>
+                                        <button type="submit" className="flex-1 py-3 bg-emerald-600 text-white rounded-xl">{editingGroup ? "Güncelle" : "Oluştur"}</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* MODAL - YENİ EĞİTMEN EKLEME */}
+                    {isInstructorModalOpen && (
+                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                            <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md">
+                                <h3 className="text-lg font-bold mb-4">Yeni Eğitmen Ekle</h3>
+                                <form onSubmit={handleAddInstructor} className="space-y-3">
+                                    <input required placeholder="Ad Soyad" value={newInstName} onChange={e=>setNewInstName(e.target.value)} className="w-full border p-3 rounded-xl outline-none focus:border-emerald-500" />
+                                    <input required type="email" placeholder="E-posta Adresi (Gmail)" value={newInstEmail} onChange={e=>setNewInstEmail(e.target.value)} className="w-full border p-3 rounded-xl outline-none focus:border-emerald-500" />
+                                    <div className="flex gap-2 mt-4"><button type="button" onClick={()=>setIsInstructorModalOpen(false)} className="flex-1 py-3 bg-gray-100 rounded-xl text-gray-600">İptal</button><button type="submit" className="flex-1 py-3 bg-orange-500 text-white rounded-xl hover:bg-orange-600">Ekle</button></div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* MODAL - ÖĞRENCİ EKLEME (GLOBAL) */}
+                    {isStudentModalOpen && (
+                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                            <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md">
+                                <h3 className="text-lg font-bold mb-4">Yeni Öğrenci Ekle</h3>
+                                <form onSubmit={handleAddStudentGlobal} className="space-y-3">
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-bold text-gray-500 ml-1">ÖĞRENCİ BİLGİSİ</label>
+                                        <input placeholder="Ad Soyad" value={newStudentName} onChange={e=> setNewStudentName(e.target.value)} className="w-full border p-3 rounded-xl outline-none focus:border-emerald-500" />
+                                        <div className="grid grid-cols-2 gap-2"><input type="number" placeholder="Yaş" value={newStudentAge} onChange={e=>setNewStudentAge(e.target.value)} className="border p-3 rounded-xl outline-none focus:border-emerald-500" /><input type="tel" placeholder="Telefon No" value={newStudentPhone} onChange={e=>setNewStudentPhone(e.target.value)} className="border p-3 rounded-xl outline-none focus:border-emerald-500" /></div>
+                                    </div>
+                                    <div className="pt-2">
+                                        <label className="text-xs font-bold text-gray-500 ml-1">HEDEF GRUP (İsteğe Bağlı)</label>
+                                        <select className="w-full border p-3 rounded-xl outline-none bg-white mt-1 text-sm" value={selectedGroupIdForStudent} onChange={(e) => setSelectedGroupIdForStudent(e.target.value)}><option value="">Grup Seçiniz (Opsiyonel)...</option>{groups.map(g => (<option key={g.id} value={g.id}>{g.name} ({g.schedule.length} ders/hf)</option>))}</select>
+                                    </div>
+                                    <div className="flex gap-2 mt-4"><button type="button" onClick={()=>setIsStudentModalOpen(false)} className="flex-1 py-3 bg-gray-100 rounded-xl text-gray-600">İptal</button><button type="submit" className="flex-1 py-3 bg-emerald-600 text-white rounded-xl">Kaydet</button></div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+
+                    {isAddExistingStudentModalOpen && targetGroupForAdd && (
+                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                            <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm">
+                                <h3 className="text-lg font-bold mb-1">Gruba Öğrenci Ekle</h3>
+                                <p className="text-sm text-gray-500 mb-4">{targetGroupForAdd.name}</p>
+                                <form onSubmit={handleAddExistingStudentToGroup} className="space-y-4">
+                                    <div>
+                                        <label className="text-xs font-bold text-gray-500 ml-1">ÖĞRENCİ SEÇİNİZ</label>
+                                        <select required className="w-full border p-3 rounded-xl outline-none bg-white mt-1" value={memberToAddId} onChange={(e) => setMemberToAddId(e.target.value)}><option value="">Seçiniz...</option>{registeredStudents.filter(s => !targetGroupForAdd.players.some(p => p.id === s.id)).map(s => (<option key={s.id} value={s.id}>{s.name}</option>))}</select>
+                                        {registeredStudents.filter(s => !targetGroupForAdd.players.some(p => p.id === s.id)).length === 0 && <p className="text-xs text-red-500 mt-1">Eklenebilecek kayıtlı öğrenci yok.</p>}
+                                    </div>
+                                    <div className="flex gap-2"><button type="button" onClick={() => setIsAddExistingStudentModalOpen(false)} className="flex-1 py-3 bg-gray-100 rounded-xl text-gray-600">İptal</button><button type="submit" className="flex-1 py-3 bg-emerald-600 text-white rounded-xl">Ekle</button></div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+
+                    {viewingProfileStudent && <StudentProfileModal student={viewingProfileStudent} groups={groups} onClose={() => setViewingProfileStudent(null)} />}
+                    <LoginPopup />
+                    
+                    <ConfirmationDialog isOpen={confirmModal.isOpen} message={confirmModal.message} onConfirm={executeConfirm} onCancel={closeConfirmModal} />
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
