@@ -17,8 +17,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     
     <style>
-        /* YENİ FONT EKLENDİ: Righteous (Sportif Başlıklar İçin) */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Righteous&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=Righteous&display=swap');
         
         body { font-family: 'Inter', sans-serif; background-color: #f0fdf4; }
         .font-sport { font-family: 'Righteous', cursive; }
@@ -32,7 +31,6 @@
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         .animate-slide-up { animation: slideUp 0.5s ease-out forwards; }
         
-        /* PREMIUM TASARIM CSS */
         .bg-tennis-court {
             background-image: linear-gradient(to bottom, rgba(240, 253, 244, 0.9), rgba(240, 253, 244, 0.95)), url('https://images.unsplash.com/photo-1575361204480-aadea2534679?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
             background-size: cover;
@@ -76,6 +74,8 @@
 
         // --- İKONLAR ---
         const icons = {
+            Download: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
+            Upload: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>,
             ChartPie: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>,
             TrendingUp: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>,
             Settings: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>,
@@ -228,7 +228,7 @@
                             <button onClick={onCoachClick} className="w-full bg-lime-500 hover:bg-lime-400 text-emerald-900 font-bold py-4 px-6 rounded-3xl transition-all transform hover:scale-[1.02] shadow-lg flex items-center justify-center gap-3 text-lg"><Icon name="UserSquare" size={24} /> ANTRENÖR GİRİŞİ</button>
                             <button onClick={onAdminClick} className="w-full bg-lime-500 hover:bg-lime-400 text-black font-bold py-4 px-6 rounded-3xl transition-all transform hover:scale-[1.02] shadow-lg flex items-center justify-center gap-3 text-lg border-2 border-transparent"><Icon name="Lock" size={20} /> YÖNETİCİ GİRİŞİ</button>
                         </div>
-                        <p className="mt-10 text-white/70 text-xs font-medium">© 2025 DTK App v5.2 Premium</p>
+                        <p className="mt-10 text-white/70 text-xs font-medium">© 2025 DTK App v5.3</p>
                     </div>
                 </div>
             );
@@ -463,6 +463,44 @@
             const handleChangeAdminPassword = (e) => { e.preventDefault(); if(changePassData.current !== adminPassword) { alert("Mevcut şifre yanlış!"); return; } if(changePassData.new.length < 4) { alert("Yeni şifre en az 4 karakter olmalı."); return; } if(changePassData.new !== changePassData.confirm) { alert("Yeni şifreler uyuşmuyor."); return; } askConfirmation("Yönetici şifresini değiştirmek istediğinize emin misiniz?", () => { setAdminPassword(changePassData.new); setIsSettingsOpen(false); setChangePassData({ current: '', new: '', confirm: '' }); alert("Şifreniz başarıyla değiştirildi."); }); };
             const getAttendanceInfo = (group, date) => { const recs = group.records[date]; if (!recs) return { taken: false, presentCount: 0 }; const taken = Object.keys(recs).length > 0; const presentCount = Object.values(recs).filter(s => s === 'present').length; return { taken, presentCount }; };
             const toggleAttendance = (playerId, status) => { const updatedGroups = groups.map(g => { if (g.id === activeGroup.id) { const recs = g.records[selectedDate] || {}; const newStatus = recs[playerId] === status ? null : status; return { ...g, records: { ...g.records, [selectedDate]: { ...recs, [playerId]: newStatus } } }; } return g; }); setGroups(updatedGroups); if(activeGroup) setActiveGroup(updatedGroups.find(g => g.id === activeGroup.id)); };
+
+            // YEDEKLEME FONKSİYONLARI
+            const handleExportData = () => {
+                const data = {
+                    groups: localStorage.getItem('diyarbakir_tennis_v4'),
+                    coaches: localStorage.getItem('diyarbakir_tennis_coaches_v1'),
+                    students: localStorage.getItem('diyarbakir_tennis_students_v2'),
+                    logo: localStorage.getItem('dtk_logo_v1'),
+                    pass: localStorage.getItem('dtk_admin_pass')
+                };
+                const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `DTK_Yedek_${new Date().toISOString().slice(0,10)}.json`;
+                a.click();
+            };
+
+            const handleImportData = (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        if(data.groups) localStorage.setItem('diyarbakir_tennis_v4', data.groups);
+                        if(data.coaches) localStorage.setItem('diyarbakir_tennis_coaches_v1', data.coaches);
+                        if(data.students) localStorage.setItem('diyarbakir_tennis_students_v2', data.students);
+                        if(data.logo) localStorage.setItem('dtk_logo_v1', data.logo);
+                        if(data.pass) localStorage.setItem('dtk_admin_pass', data.pass);
+                        alert("Veriler başarıyla yüklendi! Sayfa yenileniyor...");
+                        window.location.reload();
+                    } catch (err) {
+                        alert("Hata: Geçersiz yedek dosyası!");
+                    }
+                };
+                reader.readAsText(file);
+            };
 
             const LoginPopup = () => {
                 const [step, setStep] = useState('email'); const [email, setEmail] = useState(""); const [password, setPassword] = useState(""); const [confirmPass, setConfirmPass] = useState(""); const [error, setError] = useState(""); const [foundInst, setFoundInst] = useState(null);
@@ -735,9 +773,22 @@
                     {/* MODALLER (Tasarım Güncellendi) */}
                     {isSettingsOpen && (
                         <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-[70]">
-                            <div className="glass-modal rounded-[32px] shadow-2xl p-8 w-full max-w-sm border-t-white/50">
+                            <div className="glass-modal rounded-[32px] shadow-2xl p-8 w-full max-w-sm border-t-white/50 max-h-[85vh] overflow-y-auto">
                                 <h3 className="text-2xl font-black mb-6 flex items-center gap-3 text-gray-800"><div className="p-2 bg-emerald-100/50 rounded-xl text-emerald-600"><Icon name="Settings" size={28} /></div> Yönetici Ayarları</h3>
                                 <div className="space-y-6">
+                                    
+                                    <div className="p-6 bg-blue-50/60 rounded-3xl border border-blue-100/50 shadow-sm">
+                                        <h4 className="text-lg font-bold text-blue-800 mb-4 flex items-center gap-2"><Icon name="Layers" size={20}/> Veri Yedekleme</h4>
+                                        <p className="text-xs text-blue-600 mb-4">Verilerinizi başka cihaza aktarmak veya kaybolmasını önlemek için yedek alın.</p>
+                                        <div className="space-y-3">
+                                            <button onClick={handleExportData} className="w-full bg-blue-600 text-white py-3 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-blue-700 transition-colors"><Icon name="Download" size={20}/> Yedek İndir</button>
+                                            <div className="relative">
+                                                <button className="w-full bg-white text-blue-600 border-2 border-blue-200 py-3 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-blue-50 transition-colors"><Icon name="Upload" size={20}/> Yedek Yükle</button>
+                                                <input type="file" accept=".json" onChange={handleImportData} className="absolute inset-0 opacity-0 cursor-pointer" />
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <div className="p-6 bg-white/60 rounded-3xl border border-white/50 shadow-sm">
                                         <h4 className="text-lg font-bold text-gray-700 mb-4">Şifre Değiştir</h4>
                                         <form onSubmit={handleChangeAdminPassword} className="space-y-4">
@@ -778,45 +829,4 @@
                                 <form onSubmit={handleAddStudentGlobal} className="space-y-5">
                                     <div className="flex justify-center mb-6">
                                         <div className="w-28 h-28 rounded-full bg-gray-50/50 border-4 border-dashed border-gray-200/80 flex items-center justify-center relative overflow-hidden group hover:border-emerald-400 transition-colors">
-                                            {newStudentPhoto ? <img src={newStudentPhoto} className="w-full h-full object-cover" /> : <div className="text-center"><Icon name="Camera" size={28} className="text-gray-300 mx-auto mb-1 group-hover:text-emerald-400"/><span className="text-xs text-gray-400 font-bold group-hover:text-emerald-500">Fotoğraf<br/>Seç</span></div>}
-                                            <input type="file" ref={photoInputRef} onChange={handlePhotoChange} className="absolute inset-0 opacity-0 cursor-pointer" accept="image/*" />
-                                        </div>
-                                    </div>
-                                    <div className="space-y-3 p-5 bg-gray-50/50 rounded-3xl border border-gray-100/50"><label className="text-xs font-bold text-gray-500 ml-1 uppercase tracking-wider">ÖĞRENCİ BİLGİSİ</label><input placeholder="Ad Soyad" value={newStudentName} onChange={e=> setNewStudentName(e.target.value)} className="w-full border-2 border-gray-200/80 p-3 rounded-2xl text-sm outline-none focus:border-emerald-500 bg-white/80 font-medium transition-all focus:bg-white shadow-sm" /><div className="grid grid-cols-2 gap-3"><input type="number" placeholder="Yaş" value={newStudentAge} onChange={e=>setNewStudentAge(e.target.value)} className="border-2 border-gray-200/80 p-3 rounded-2xl text-sm outline-none focus:border-emerald-500 bg-white/80 font-medium transition-all focus:bg-white shadow-sm" /><input type="tel" placeholder="Telefon No" value={newStudentPhone} onChange={e=>setNewStudentPhone(e.target.value)} className="border-2 border-gray-200/80 p-3 rounded-2xl text-sm outline-none focus:border-emerald-500 bg-white/80 font-medium transition-all focus:bg-white shadow-sm" /></div></div><div className="pt-2 p-5 bg-gray-50/50 rounded-3xl border border-gray-100/50"><label className="text-xs font-bold text-gray-500 ml-1 uppercase tracking-wider">HEDEF GRUP (İsteğe Bağlı)</label><div className="relative mt-2"><select className="w-full border-2 border-gray-200/80 p-3 rounded-2xl outline-none bg-white/80 text-sm font-medium shadow-sm appearance-none" value={selectedGroupIdForStudent} onChange={(e) => setSelectedGroupIdForStudent(e.target.value)}><option value="">Grup Seçiniz (Opsiyonel)...</option>{groups.map(g => (<option key={g.id} value={g.id}>{g.name} ({g.schedule.length} ders/hf)</option>))}</select><Icon name="ChevronLeft" className="absolute right-4 top-4 rotate-90 text-gray-400 pointer-events-none" size={16} /></div></div><div className="flex gap-4 mt-8"><button type="button" onClick={()=>setIsStudentModalOpen(false)} className="flex-1 py-4 bg-gray-100/80 rounded-2xl text-gray-600 font-bold text-lg hover:bg-gray-200/80 transition-colors">İptal</button><button type="submit" className="flex-1 py-4 bg-emerald-600 text-white rounded-2xl font-bold text-lg shadow-md hover:bg-emerald-700 transition-colors">Kaydet</button></div>
-                                </form>
-                            </div>
-                        </div>
-                    )}
-                    
-                    {isAddExistingStudentModalOpen && targetGroupForAdd && (
-                        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-50">
-                            <div className="glass-modal rounded-[32px] shadow-2xl p-8 w-full max-w-sm max-h-[80vh] flex flex-col border-t-white/50">
-                                <h3 className="text-2xl font-black mb-2 tracking-tight text-gray-800">Gruba Öğrenci Ekle</h3>
-                                <p className="text-sm text-emerald-600 font-bold mb-6 bg-emerald-50/50 p-2 rounded-xl inline-block border border-emerald-100/50 flex items-center gap-2"><Icon name="Layers" size={16}/> {targetGroupForAdd.name}</p>
-                                <div className="flex-1 overflow-y-auto border-2 border-gray-100/50 rounded-3xl p-3 mb-6 bg-white/40 backdrop-blur-sm">
-                                    {registeredStudents.filter(s => !targetGroupForAdd.players.some(p => p.id === s.id)).length === 0 ? <p className="text-center text-gray-400 py-8 font-medium italic">Eklenecek öğrenci kalmadı.</p> : 
-                                    registeredStudents.filter(s => !targetGroupForAdd.players.some(p => p.id === s.id)).map(s => (
-                                        <div key={s.id} onClick={() => handleToggleSelection(s.id)} className={`flex items-center gap-4 p-4 mb-2 rounded-2xl cursor-pointer border-2 transition-all ${selectedMemberIds.includes(s.id) ? 'bg-emerald-100/80 border-emerald-500 shadow-sm' : 'bg-white/70 border-transparent hover:bg-white/90 shadow-sm'}`}>
-                                            <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${selectedMemberIds.includes(s.id) ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-gray-300 bg-white'}`}>{selectedMemberIds.includes(s.id) && <Icon name="CheckSquare" size={16} />}</div>
-                                            {s.photo ? <img src={s.photo} className="student-photo-sm ring-2 ring-white shadow-sm" /> : <div className="student-photo-sm bg-gray-200 flex items-center justify-center text-[10px] text-gray-500 font-bold ring-2 ring-white shadow-sm">?</div>}
-                                            <div className="text-sm font-bold text-gray-800">{s.name}</div>
-                                        </div>
-                                    ))}
-                                </div>
-                                <div className="flex gap-4"><button type="button" onClick={() => {setIsAddExistingStudentModalOpen(false); setSelectedMemberIds([]);}} className="flex-1 py-4 bg-gray-100/80 rounded-2xl text-gray-600 font-bold text-lg hover:bg-gray-200/80 transition-colors">İptal</button><button onClick={handleAddMultipleExistingStudents} className="flex-1 py-4 bg-emerald-600 text-white rounded-2xl font-bold text-lg shadow-md hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled={selectedMemberIds.length === 0}>Seçilenleri Ekle ({selectedMemberIds.length})</button></div>
-                            </div>
-                        </div>
-                    )}
-
-                    {viewingProfileStudent && <StudentProfileModal student={viewingProfileStudent} groups={groups} onClose={() => setViewingProfileStudent(null)} />}
-                    <LoginPopup />
-                    <ConfirmationDialog isOpen={confirmModal.isOpen} message={confirmModal.message} onConfirm={executeConfirm} onCancel={closeConfirmModal} />
-                </div>
-            );
-        };
-
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
-</body>
-</html>
+                                            {newStudentPhoto ? <img src={newStudentPhoto} className="w-full h-full object-cover" /> : <div className="text-center"><Icon name="Camera" size={28} className="text-gray-300 mx-auto mb-1 group-hover:text-emerald-400"/><span className="text-xs text-gray-400 font-bold group-hover:text-emerald-500
