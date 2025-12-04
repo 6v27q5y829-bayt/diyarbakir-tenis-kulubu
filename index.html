@@ -25,37 +25,33 @@
         .bg-tennis { background: linear-gradient(to bottom, rgba(240,253,244,0.9), rgba(240,253,244,0.95)), url('https://images.unsplash.com/photo-1575361204480-aadea2534679?auto=format&fit=crop&w=1000'); background-size: cover; background-attachment: fixed; }
         .glass { background: rgba(255,255,255,0.85); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.3); }
         
-        /* Yükleniyor Ekranı */
-        #loading-screen { position: fixed; inset: 0; background: #064e3b; display: flex; justify-content: center; align-items: center; color: white; z-index: 9999; font-family: sans-serif; flex-direction: column; }
-        #error-box { display: none; position: fixed; top: 0; left: 0; width: 100%; background: red; color: white; p: 20px; z-index: 10000; font-size: 12px; white-space: pre-wrap; }
+        #loading-screen { position: fixed; inset: 0; background: #064e3b; display: flex; justify-content: center; align-items: center; color: white; z-index: 9999; font-family: sans-serif; flex-direction: column; text-align: center; }
+        #error-box { display: none; position: fixed; top: 0; left: 0; width: 100%; background: #ef4444; color: white; padding: 20px; z-index: 10000; font-size: 12px; white-space: pre-wrap; font-weight: bold;}
     </style>
 </head>
 <body class="bg-tennis min-h-screen">
 
     <div id="error-box"></div>
-
     <div id="loading-screen">
-        <div class="text-2xl font-bold animate-pulse">Tenis App Başlatılıyor...</div>
-        <div class="text-sm mt-2 opacity-75">Lütfen bekleyin</div>
+        <div class="text-4xl mb-4">🎾</div>
+        <div class="text-2xl font-bold animate-pulse">Tenis App</div>
+        <div class="text-sm mt-2 opacity-75" id="loading-text">Veritabanına Bağlanıyor...</div>
     </div>
-
     <div id="root"></div>
 
     <script>
-        // HATA YAKALAYICI (Beyaz ekran yerine hatayı gösterecek)
+        // Hata Yakalayıcı
         window.onerror = function(msg, url, lineNo, columnNo, error) {
-            const box = document.getElementById('error-box');
-            const loader = document.getElementById('loading-screen');
-            loader.style.display = 'none';
-            box.style.display = 'block';
-            box.innerHTML = `HATA OLUŞTU!\nMesaj: ${msg}\nSatır: ${lineNo}`;
+            document.getElementById('loading-screen').style.display = 'none';
+            document.getElementById('error-box').style.display = 'block';
+            document.getElementById('error-box').innerText = "HATA: " + msg + "\nSatır: " + lineNo;
             return false;
         };
     </script>
 
     <script type="text/babel">
         try {
-            // --- FIREBASE BAŞLATMA ---
+            // --- SENİN GÖNDERDİĞİN DOĞRU ANAHTARLAR (CDN FORMATINA ÇEVRİLDİ) ---
             const firebaseConfig = {
                 apiKey: "AIzaSyDaOllootHtCrBEKEILkvq9cXTTNvZJ38Q",
                 authDomain: "diyarbakir-tenis.firebaseapp.com",
@@ -64,7 +60,8 @@
                 messagingSenderId: "410226513632",
                 appId: "1:410226513632:web:521162e0dcc71e93432285",
                 measurementId: "G-LX8YKZL8MY",
-                databaseURL: "https://diyarbakir-tenis-default-rtdb.firebaseio.com/" 
+                // Burası senin proje isminden otomatik oluşturuldu:
+                databaseURL: "https://diyarbakir-tenis-default-rtdb.firebaseio.com/"
             };
 
             if (!firebase.apps.length) {
@@ -75,7 +72,7 @@
             // --- REACT KODLARI ---
             const { useState, useEffect, useMemo, useRef } = React;
 
-            // İKONLAR (Basitleştirilmiş)
+            // İKONLAR
             const Icon = ({name}) => {
                 const p = {
                     UserSquare: "M3 3h18v18H3z M12 7a3 3 0 1 0 0 6 3 3 0 0 0 0-6z M7 21v-2a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2",
@@ -95,16 +92,25 @@
             };
 
             const App = () => {
-                // VERİLER
                 const [groups, setGroups] = useState([]);
                 const [coaches, setCoaches] = useState([]);
                 const [students, setStudents] = useState([]);
                 const [adminPass, setAdminPass] = useState("2121");
                 const [logo, setLogo] = useState("https://cdn-icons-png.flaticon.com/512/33/33736.png");
 
-                // FIREBASE DİNLEME
+                // --- GÜVENLİ VERİ ÇEKME ---
                 useEffect(() => {
                     const l = document.getElementById('loading-screen');
+                    const txt = document.getElementById('loading-text');
+                    
+                    // Zaman aşımı koruması (5 saniye sonra zorla aç)
+                    const timeout = setTimeout(() => {
+                        if(l && l.style.display !== 'none') {
+                            l.style.display = 'none';
+                        }
+                    }, 5000);
+
+                    // Veritabanı dinleyicisi
                     db.ref('/').on('value', (s) => {
                         const d = s.val() || {};
                         setGroups(d.groups ? Object.values(d.groups) : []);
@@ -112,19 +118,22 @@
                         setStudents(d.students ? Object.values(d.students) : []);
                         if(d.logo) setLogo(d.logo);
                         if(d.adminPass) setAdminPass(d.adminPass);
-                        if(l) l.style.display = 'none'; // Veri gelince yükleniyor'u kaldır
+                        
+                        if(l) l.style.display = 'none'; // Veri gelince kapat
+                        clearTimeout(timeout);
+                    }, (error) => {
+                        if(txt) txt.innerHTML = "<span class='text-red-300'>BAĞLANTI HATASI!</span><br>Lütfen interneti kontrol et.";
+                        document.getElementById('error-box').style.display='block';
+                        document.getElementById('error-box').innerText = "Firebase Hatası: " + error.message;
                     });
                 }, []);
 
-                // AUTH & STATE
                 const [role, setRole] = useState(localStorage.getItem('dtk_role'));
                 const [user, setUser] = useState(localStorage.getItem('dtk_user'));
                 const [tab, setTab] = useState('schedule');
                 const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
                 const [loginMode, setLoginMode] = useState(null);
-                
-                // FORM STATES
-                const [modal, setModal] = useState(null); // 'group', 'student', 'coach', 'settings'
+                const [modal, setModal] = useState(null);
                 const [inputs, setInputs] = useState({});
                 const [activeGroup, setActiveGroup] = useState(null);
 
@@ -147,20 +156,19 @@
                     }
                 };
 
+                // ACTIONS
                 const saveGroup = () => {
                     if(!inputs.name || !inputs.coach) return alert("Eksik bilgi");
                     const id = Date.now();
                     db.ref(`groups/${id}`).set({ id, name: inputs.name, instructor: inputs.coach, schedule: [{day: inputs.day, time: inputs.time}], players: [] });
                     setModal(null);
                 };
-
                 const saveCoach = () => {
                     if(!inputs.name || !inputs.email) return;
                     const id = Date.now();
                     db.ref(`coaches/${id}`).set({ id, name: inputs.name, email: inputs.email, password: null });
                     setModal(null);
                 };
-
                 const saveStudent = () => {
                     if(!inputs.name) return;
                     const id = Date.now();
@@ -172,7 +180,6 @@
                     }
                     setModal(null);
                 };
-
                 const toggleAttendance = (gid, pid, status) => {
                     const g = groups.find(x=>x.id === gid);
                     const current = g.records?.[date]?.[pid];
@@ -181,27 +188,26 @@
                     else db.ref(`groups/${gid}/records/${date}/${pid}`).set(val);
                 };
 
-                // --- EKRANLAR ---
-                
+                // RENDER
                 if(!role) return (
                     <div className="min-h-screen welcome-bg flex flex-col items-center justify-center p-6 text-center">
                         <div className="glass p-8 rounded-[40px] w-full max-w-sm shadow-2xl">
-                            <img src={logo} className="w-24 h-24 rounded-full mx-auto mb-4 bg-white p-2"/>
+                            <img src={logo} className="w-24 h-24 rounded-full mx-auto mb-4 bg-white p-2 object-cover"/>
                             <h1 className="text-3xl font-sport text-white mb-2">Diyarbakır</h1>
                             <h2 className="text-xl font-sport text-lime-400 mb-8">TENİS KULÜBÜ</h2>
-                            <button onClick={()=>{setLoginMode('coach'); setInputs({})}} className="w-full bg-lime-500 py-4 rounded-2xl font-bold text-emerald-900 mb-3 flex justify-center gap-2"><Icon name="UserSquare"/> ANTRENÖR GİRİŞİ</button>
-                            <button onClick={()=>{setLoginMode('admin'); setInputs({})}} className="w-full bg-white/20 border-2 border-white/20 py-4 rounded-2xl font-bold text-white flex justify-center gap-2"><Icon name="Lock"/> YÖNETİCİ GİRİŞİ</button>
-                            <p className="mt-6 text-white/50 text-xs">v7.0 Final</p>
+                            <button onClick={()=>{setLoginMode('coach'); setInputs({})}} className="w-full bg-lime-500 py-4 rounded-2xl font-bold text-emerald-900 mb-3 flex justify-center gap-2 shadow-lg"><Icon name="UserSquare"/> ANTRENÖR GİRİŞİ</button>
+                            <button onClick={()=>{setLoginMode('admin'); setInputs({})}} className="w-full bg-lime-500 border-2 border-transparent py-4 rounded-2xl font-bold text-black flex justify-center gap-2 shadow-lg"><Icon name="Lock"/> YÖNETİCİ GİRİŞİ</button>
+                            <p className="mt-6 text-white/50 text-xs">v7.3 Online (Compat)</p>
                         </div>
                         {loginMode && (
                             <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
                                 <div className="bg-white rounded-3xl p-6 w-full max-w-sm relative">
-                                    <button onClick={()=>setLoginMode(null)} className="absolute top-4 right-4 text-xl">✕</button>
+                                    <button onClick={()=>setLoginMode(null)} className="absolute top-4 right-4 text-xl font-bold">✕</button>
                                     <h3 className="text-xl font-bold mb-4">{loginMode==='admin'?'Yönetici':'Antrenör'}</h3>
                                     <form onSubmit={handleLogin} className="space-y-3">
                                         {loginMode==='coach' && <input placeholder="E-posta" className="w-full border p-3 rounded-xl" onChange={e=>setInputs({...inputs, email:e.target.value})} />}
                                         <input type="password" placeholder="Şifre" className="w-full border p-3 rounded-xl" onChange={e=>setInputs({...inputs, pass:e.target.value})} />
-                                        <button className="w-full bg-emerald-600 text-white p-3 rounded-xl font-bold">Giriş</button>
+                                        <button className="w-full bg-emerald-600 text-white p-3 rounded-xl font-bold shadow-md">Giriş</button>
                                     </form>
                                 </div>
                             </div>
@@ -217,11 +223,8 @@
                         {/* HEADER */}
                         <div className="p-4 bg-emerald-900/90 text-white flex justify-between items-center shadow-lg backdrop-blur-md sticky top-0 z-40">
                             <div className="flex items-center gap-3">
-                                {activeGroup ? <button onClick={()=>setActiveGroup(null)}><Icon name="ChevronLeft"/></button> : <img src={logo} className="w-10 h-10 rounded-full bg-white p-1"/>}
-                                <div>
-                                    <div className="font-sport text-lg">{activeGroup ? activeGroup.name : "DTK APP"}</div>
-                                    <div className="text-[10px] opacity-75">{role==='admin' ? 'YÖNETİCİ' : user}</div>
-                                </div>
+                                {activeGroup ? <button onClick={()=>setActiveGroup(null)}><Icon name="ChevronLeft"/></button> : <img src={logo} className="w-10 h-10 rounded-full bg-white p-1 object-cover"/>}
+                                <div><div className="font-sport text-lg">{activeGroup ? activeGroup.name : "DTK APP"}</div><div className="text-[10px] opacity-75">{role==='admin' ? 'YÖNETİCİ' : user}</div></div>
                             </div>
                             <button onClick={()=>{setRole(null); localStorage.removeItem('dtk_role')}}><Icon name="LogOut"/></button>
                         </div>
@@ -230,82 +233,20 @@
                         <div className="flex-1 overflow-y-auto p-4 pb-32">
                             {activeGroup ? (
                                 <div>
-                                    <div className="glass p-4 rounded-3xl mb-4">
-                                        <h2 className="text-xl font-bold">{activeGroup.instructor}</h2>
-                                        <div className="text-gray-500">{curDay}</div>
-                                    </div>
-                                    
-                                    {/* HIZLI EKLE (ADMIN) */}
-                                    {role==='admin' && (
-                                        <div className="flex gap-2 mb-4">
-                                            <input placeholder="Hızlı Öğrenci Ekle..." className="flex-1 p-3 rounded-xl border shadow-sm" 
-                                                value={inputs.quickName||''} 
-                                                onChange={e=>setInputs({...inputs, quickName:e.target.value})}
-                                            />
-                                            <button onClick={()=>{
-                                                if(!inputs.quickName) return;
-                                                const id = Date.now(); const s = {id, name:inputs.quickName};
-                                                if(!students.some(x=>x.id===id)) db.ref(`students/${id}`).set(s);
-                                                db.ref(`groups/${activeGroup.id}`).update({ players: [...(activeGroup.players||[]), s] });
-                                                setInputs({...inputs, quickName:''});
-                                            }} className="bg-emerald-600 text-white p-3 rounded-xl font-bold">+</button>
-                                        </div>
-                                    )}
-
-                                    <div className="space-y-2">
-                                        {(activeGroup.players||[]).map(p => {
-                                            const status = activeGroup.records?.[date]?.[p.id];
-                                            const isAuth = role==='admin' || user===activeGroup.instructor;
-                                            return (
-                                                <div key={p.id} className="glass p-3 rounded-xl flex justify-between items-center shadow-sm">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className={`w-3 h-3 rounded-full ${status==='present'?'bg-lime-500':status==='absent'?'bg-red-500':'bg-gray-300'}`}></div>
-                                                        <span className="font-bold text-gray-800">{p.name}</span>
-                                                    </div>
-                                                    {isAuth && (
-                                                        <div className="flex gap-2">
-                                                            <button onClick={()=>toggleAttendance(activeGroup.id, p.id, 'present')} className="p-2 border rounded-lg bg-white/50">✅</button>
-                                                            <button onClick={()=>toggleAttendance(activeGroup.id, p.id, 'absent')} className="p-2 border rounded-lg bg-white/50">❌</button>
-                                                            {role==='admin' && <button onClick={()=>{
-                                                                if(confirm("Gruptan çıkar?")) {
-                                                                    const np = activeGroup.players.filter(x=>x.id!==p.id);
-                                                                    db.ref(`groups/${activeGroup.id}`).update({players:np});
-                                                                    setActiveGroup({...activeGroup, players:np});
-                                                                }
-                                                            }} className="p-2 border rounded-lg text-red-500 bg-white/50"><Icon name="Trash2"/></button>}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            )
-                                        })}
-                                    </div>
+                                    <div className="glass p-4 rounded-3xl mb-4"><h2 className="text-xl font-bold">{activeGroup.instructor}</h2><div className="text-gray-500">{curDay}</div></div>
+                                    {role==='admin' && <div className="flex gap-2 mb-4"><input placeholder="Hızlı Ekle..." className="flex-1 p-3 rounded-xl border shadow-sm" value={inputs.quickName||''} onChange={e=>setInputs({...inputs, quickName:e.target.value})}/><button onClick={()=>{if(!inputs.quickName)return; const id=Date.now(); const s={id, name:inputs.quickName}; if(!students.some(x=>x.id===id))db.ref(`students/${id}`).set(s); db.ref(`groups/${activeGroup.id}`).update({players:[...(activeGroup.players||[]), s]}); setInputs({...inputs, quickName:''});}} className="bg-emerald-600 text-white p-3 rounded-xl font-bold">+</button></div>}
+                                    <div className="space-y-2">{(activeGroup.players||[]).map(p => { const status = activeGroup.records?.[date]?.[p.id]; const isAuth = role==='admin' || user===activeGroup.instructor; return <div key={p.id} className="glass p-3 rounded-xl flex justify-between items-center shadow-sm"><div className="flex items-center gap-3"><div className={`w-3 h-3 rounded-full ${status==='present'?'bg-lime-500':status==='absent'?'bg-red-500':'bg-gray-300'}`}></div><span className="font-bold text-gray-800">{p.name}</span></div>{isAuth && <div className="flex gap-2"><button onClick={()=>toggleAttendance(activeGroup.id, p.id, 'present')} className="p-2 border rounded-lg bg-white/50">✅</button><button onClick={()=>toggleAttendance(activeGroup.id, p.id, 'absent')} className="p-2 border rounded-lg bg-white/50">❌</button>{role==='admin' && <button onClick={()=>{if(confirm("Gruptan çıkar?")){const np=activeGroup.players.filter(x=>x.id!==p.id); db.ref(`groups/${activeGroup.id}`).update({players:np}); setActiveGroup({...activeGroup, players:np});}}} className="p-2 border rounded-lg text-red-500 bg-white/50"><Icon name="Trash2"/></button>}</div>}</div> })}</div>
                                 </div>
                             ) : (
                                 <>
-                                    {/* TAKVİM */}
-                                    <div className="flex gap-2 overflow-x-auto pb-4 mb-2">
-                                        {[-1,0,1,2,3,4,5].map(i => {
-                                            const d = new Date(); d.setDate(d.getDate() + i);
-                                            const ds = d.toISOString().split('T')[0];
-                                            const isSel = ds === date;
-                                            return <button key={i} onClick={()=>setDate(ds)} className={`p-3 rounded-2xl min-w-[60px] text-center border ${isSel ? 'bg-lime-400 font-bold border-lime-500 shadow-lg scale-105' : 'glass text-gray-600'}`}><div className="text-xs">{['Pa','Pt','Sa','Ça','Pe','Cu','Ct'][d.getDay()]}</div><div className="text-xl">{d.getDate()}</div></button>
-                                        })}
-                                    </div>
-
-                                    {/* LİSTELER */}
+                                    <div className="flex gap-2 overflow-x-auto pb-4 mb-2">{[-1,0,1,2,3,4,5].map(i => { const d = new Date(); d.setDate(d.getDate() + i); const ds = d.toISOString().split('T')[0]; return <button key={i} onClick={()=>setDate(ds)} className={`p-3 rounded-2xl min-w-[60px] text-center border ${ds===date ? 'bg-lime-400 font-bold border-lime-500 shadow-lg scale-105' : 'glass text-gray-600'}`}><div className="text-xs">{['Pa','Pt','Sa','Ça','Pe','Cu','Ct'][d.getDay()]}</div><div className="text-xl">{d.getDate()}</div></button> })}</div>
                                     <div className="space-y-4">
-                                        {adminTab === 'schedule' && dailyGroups.map(g => (
-                                            <div key={g.id} onClick={()=>setActiveGroup(g)} className="glass p-5 rounded-3xl relative shadow-sm active:scale-95 transition-transform">
-                                                <div className="absolute top-0 right-0 bg-emerald-100 text-emerald-800 px-3 py-1 rounded-bl-xl text-xs font-bold">{g.schedule?.find(s=>s.day===curDay)?.time}</div>
-                                                <h3 className="text-lg font-black text-gray-800">{g.name}</h3>
-                                                <div className="text-sm text-emerald-600 font-bold">{g.instructor}</div>
-                                                <div className="mt-2 text-xs text-gray-500">{g.players?.length||0} Oyuncu</div>
-                                            </div>
-                                        ))}
-                                        
+                                        {adminTab === 'schedule' && dailyGroups.map(g => <div key={g.id} onClick={()=>setActiveGroup(g)} className="glass p-5 rounded-3xl relative shadow-sm active:scale-95 transition-transform"><div className="absolute top-0 right-0 bg-emerald-100 text-emerald-800 px-3 py-1 rounded-bl-xl text-xs font-bold">{g.schedule?.find(s=>s.day===curDay)?.time}</div><h3 className="text-lg font-black text-gray-800">{g.name}</h3><div className="text-sm text-emerald-600 font-bold">{g.instructor}</div><div className="mt-2 text-xs text-gray-500">{g.players?.length||0} Oyuncu</div></div>)}
                                         {adminTab === 'groups' && groups.map(g => <div key={g.id} className="glass p-4 rounded-2xl flex justify-between items-center"><div><b>{g.name}</b><div className="text-xs">{g.instructor}</div></div>{role==='admin' && <button onClick={()=>confirm('Sil?') && db.ref(`groups/${g.id}`).remove()} className="text-red-500"><Icon name="Trash2"/></button>}</div>)}
                                         {adminTab === 'coaches' && coaches.map(c => <div key={c.id} className="glass p-4 rounded-2xl flex justify-between items-center"><div><b>{c.name}</b><div className="text-xs">{c.email}</div></div>{role==='admin' && <button onClick={()=>confirm('Sil?') && db.ref(`coaches/${c.id}`).remove()} className="text-red-500"><Icon name="Trash2"/></button>}</div>)}
                                         {adminTab === 'students' && students.map(s => <div key={s.id} className="glass p-4 rounded-2xl flex justify-between items-center"><b>{s.name}</b>{role==='admin' && <button onClick={()=>confirm('Sil?') && db.ref(`students/${s.id}`).remove()} className="text-red-500"><Icon name="Trash2"/></button>}</div>)}
+                                        {/* BASİT RAPOR EKRANI */}
+                                        {adminTab === 'reports' && <div className="glass p-6 rounded-3xl"><h3 className="font-bold mb-4">Özet Rapor</h3><div className="text-sm">Toplam Ders: {groups.length}<br/>Toplam Öğrenci: {students.length}</div></div>}
                                     </div>
                                 </>
                             )}
@@ -314,88 +255,23 @@
                         {/* NAV BAR */}
                         {!activeGroup && (
                             <>
-                                {role==='admin' && (
-                                    <div className="fixed bottom-24 right-4 flex flex-col gap-3">
-                                        <button onClick={()=>{setModal('group'); setInputs({day:'Cumartesi', time:'10:00'})}} className="bg-lime-500 text-white w-14 h-14 rounded-full shadow-xl text-3xl flex items-center justify-center border-4 border-white/50">+</button>
-                                    </div>
-                                )}
+                                {role==='admin' && <div className="fixed bottom-24 right-4 flex flex-col gap-3">
+                                    {adminTab === 'groups' && <button onClick={()=>{setModal('group'); setInputs({day:'Cumartesi', time:'10:00'})}} className="bg-lime-500 text-white w-14 h-14 rounded-full shadow-xl text-3xl flex items-center justify-center border-4 border-white/50">+</button>}
+                                    {adminTab === 'students' && <button onClick={()=>{setModal('student'); setInputs({})}} className="bg-emerald-600 text-white w-14 h-14 rounded-full shadow-xl text-3xl flex items-center justify-center border-4 border-white/50">+</button>}
+                                    {adminTab === 'coaches' && <button onClick={()=>{setModal('coach'); setInputs({})}} className="bg-orange-500 text-white w-14 h-14 rounded-full shadow-xl text-3xl flex items-center justify-center border-4 border-white/50">+</button>}
+                                </div>}
                                 <div className="fixed bottom-4 left-4 right-4 glass rounded-[30px] p-2 flex justify-between shadow-2xl backdrop-blur-xl z-50">
                                     <button onClick={()=>setAdminTab('schedule')} className={`p-2 flex-1 flex flex-col items-center ${adminTab==='schedule'?'text-emerald-600 font-bold':''}`}><Icon name="Calendar"/><span className="text-[9px]">Program</span></button>
                                     <button onClick={()=>setAdminTab('groups')} className={`p-2 flex-1 flex flex-col items-center ${adminTab==='groups'?'text-emerald-600 font-bold':''}`}><Icon name="Layers"/><span className="text-[9px]">Gruplar</span></button>
                                     <button onClick={()=>setAdminTab('students')} className={`p-2 flex-1 flex flex-col items-center ${adminTab==='students'?'text-emerald-600 font-bold':''}`}><Icon name="Users"/><span className="text-[9px]">Öğrenci</span></button>
                                     <button onClick={()=>setAdminTab('coaches')} className={`p-2 flex-1 flex flex-col items-center ${adminTab==='coaches'?'text-emerald-600 font-bold':''}`}><Icon name="UserSquare"/><span className="text-[9px]">Hoca</span></button>
+                                    <button onClick={()=>setAdminTab('reports')} className={`p-2 flex-1 flex flex-col items-center ${adminTab==='reports'?'text-emerald-600 font-bold':''}`}><Icon name="ChartPie"/><span className="text-[9px]">Rapor</span></button>
                                 </div>
                             </>
                         )}
 
-                        {/* MODAL (Basitleştirilmiş Tek Modal) */}
-                        {modal && (
-                            <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-                                <div className="bg-white rounded-[32px] p-6 w-full max-w-sm relative shadow-2xl">
-                                    <button onClick={()=>setModal(null)} className="absolute top-4 right-4 font-bold text-gray-400">✕</button>
-                                    <h3 className="text-xl font-bold mb-4">{modal==='group'?'Grup Ekle':modal==='coach'?'Hoca Ekle':'Öğrenci Ekle'}</h3>
-                                    
-                                    <div className="space-y-3">
-                                        {modal==='group' && <>
-                                            <input placeholder="Grup Adı" className="w-full border p-3 rounded-xl" onChange={e=>setInputs({...inputs, name:e.target.value})}/>
-                                            <select className="w-full border p-3 rounded-xl" onChange={e=>setInputs({...inputs, coach:e.target.value})}><option>Hoca Seç</option>{coaches.map(c=><option value={c.name}>{c.name}</option>)}</select>
-                                            <div className="flex gap-2">
-                                                <select className="border p-2 rounded-xl flex-1" onChange={e=>setInputs({...inputs, day:e.target.value})}><option>Cumartesi</option><option>Pazar</option></select>
-                                                <select className="border p-2 rounded-xl flex-1" onChange={e=>setInputs({...inputs, time:e.target.value})}><option>10:00</option><option>11:00</option><option>12:00</option></select>
-                                            </div>
-                                            <button onClick={saveGroup} className="w-full bg-emerald-600 text-white p-4 rounded-xl font-bold">Kaydet</button>
-                                        </>}
-
-                                        {modal==='coach' && <> ... (Hoca Ekleme Formu buraya eklenebilir, şimdilik basit tuttum) </>}
-                                        {/* KOD ŞİŞMESİN DİYE FORM MANTIĞI YUKARIDA GENELLEŞTİRİLDİ, BURADA MODAL STATE'İNE GÖRE İÇERİK DEĞİŞTİRİLEBİLİR. 
-                                            Şu an sadece Grup Ekleme aktif, diğerleri için butonlara setModal('coach') vs eklenmeli */}
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* NAV BARDA + TUŞUNA BASINCA NE AÇILACAK? */}
-                        {/* AdminTab değişince setModal tetikleyicilerini yukarıdaki floating-nav butonlarına bağlamak lazım. 
-                            Şu an sadece 'schedule' tabında + butonu var.
-                            Diğer tablarda (örneğin students) + butonuna basınca setModal('student') yapacak şekilde güncellendi.
-                        */}
-                        {role==='admin' && !activeGroup && (
-                            <div className="fixed bottom-24 right-4 flex flex-col gap-3">
-                                {adminTab === 'groups' && <button onClick={()=>{setModal('group'); setInputs({day:'Cumartesi', time:'10:00'})}} className="bg-lime-500 text-white w-14 h-14 rounded-full shadow-xl text-3xl flex items-center justify-center border-4 border-white/50">+</button>}
-                                {adminTab === 'students' && <button onClick={()=>{setModal('student'); setInputs({})}} className="bg-emerald-600 text-white w-14 h-14 rounded-full shadow-xl text-3xl flex items-center justify-center border-4 border-white/50">+</button>}
-                                {adminTab === 'coaches' && <button onClick={()=>{setModal('coach'); setInputs({})}} className="bg-orange-500 text-white w-14 h-14 rounded-full shadow-xl text-3xl flex items-center justify-center border-4 border-white/50">+</button>}
-                            </div>
-                        )}
-
-                        {/* COACH ve STUDENT MODALLARI */}
-                        {modal === 'coach' && (
-                            <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-                                <div className="bg-white rounded-[32px] p-6 w-full max-w-sm relative">
-                                    <button onClick={()=>setModal(null)} className="absolute top-4 right-4">✕</button>
-                                    <h3 className="font-bold mb-4">Hoca Ekle</h3>
-                                    <input placeholder="Ad Soyad" className="w-full border p-3 rounded-xl mb-2" onChange={e=>setInputs({...inputs, name:e.target.value})}/>
-                                    <input placeholder="E-posta" className="w-full border p-3 rounded-xl mb-4" onChange={e=>setInputs({...inputs, email:e.target.value})}/>
-                                    <button onClick={saveCoach} className="w-full bg-orange-500 text-white p-3 rounded-xl font-bold">Kaydet</button>
-                                </div>
-                            </div>
-                        )}
-
-                        {modal === 'student' && (
-                            <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-                                <div className="bg-white rounded-[32px] p-6 w-full max-w-sm relative">
-                                    <button onClick={()=>setModal(null)} className="absolute top-4 right-4">✕</button>
-                                    <h3 className="font-bold mb-4">Öğrenci Ekle</h3>
-                                    <input placeholder="Ad Soyad" className="w-full border p-3 rounded-xl mb-2" onChange={e=>setInputs({...inputs, name:e.target.value})}/>
-                                    <input placeholder="Tel" className="w-full border p-3 rounded-xl mb-2" onChange={e=>setInputs({...inputs, phone:e.target.value})}/>
-                                    <select className="w-full border p-3 rounded-xl mb-4" onChange={e=>setInputs({...inputs, targetGroup:e.target.value})}>
-                                        <option value="">Grup Seç (Opsiyonel)</option>
-                                        {groups.map(g=><option key={g.id} value={g.id}>{g.name}</option>)}
-                                    </select>
-                                    <button onClick={saveStudent} className="w-full bg-emerald-600 text-white p-3 rounded-xl font-bold">Kaydet</button>
-                                </div>
-                            </div>
-                        )}
-
+                        {/* MODALS */}
+                        {modal && <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"><div className="bg-white rounded-[32px] p-6 w-full max-w-sm relative shadow-2xl"><button onClick={()=>setModal(null)} className="absolute top-4 right-4 font-bold text-gray-400">✕</button><h3 className="text-xl font-bold mb-4">{modal==='group'?'Grup Ekle':modal==='coach'?'Hoca Ekle':'Öğrenci Ekle'}</h3><div className="space-y-3">{modal==='group' && <><input placeholder="Grup Adı" className="w-full border p-3 rounded-xl" onChange={e=>setInputs({...inputs, name:e.target.value})}/><select className="w-full border p-3 rounded-xl" onChange={e=>setInputs({...inputs, coach:e.target.value})}><option>Hoca Seç</option>{coaches.map(c=><option value={c.name}>{c.name}</option>)}</select><div className="flex gap-2"><select className="border p-2 rounded-xl flex-1" onChange={e=>setInputs({...inputs, day:e.target.value})}><option>Cumartesi</option><option>Pazar</option></select><select className="border p-2 rounded-xl flex-1" onChange={e=>setInputs({...inputs, time:e.target.value})}><option>10:00</option><option>11:00</option><option>12:00</option></select></div><button onClick={saveGroup} className="w-full bg-emerald-600 text-white p-4 rounded-xl font-bold">Kaydet</button></>} {modal==='coach' && <><input placeholder="Ad Soyad" className="w-full border p-3 rounded-xl" onChange={e=>setInputs({...inputs, name:e.target.value})}/><input placeholder="E-posta" className="w-full border p-3 rounded-xl" onChange={e=>setInputs({...inputs, email:e.target.value})}/><button onClick={saveCoach} className="w-full bg-orange-500 text-white p-3 rounded-xl font-bold">Kaydet</button></>} {modal==='student' && <><input placeholder="Ad Soyad" className="w-full border p-3 rounded-xl" onChange={e=>setInputs({...inputs, name:e.target.value})}/><input placeholder="Tel" className="w-full border p-3 rounded-xl" onChange={e=>setInputs({...inputs, phone:e.target.value})}/><select className="w-full border p-3 rounded-xl" onChange={e=>setInputs({...inputs, targetGroup:e.target.value})}><option value="">Grup Seç (Opsiyonel)</option>{groups.map(g=><option key={g.id} value={g.id}>{g.name}</option>)}</select><button onClick={saveStudent} className="w-full bg-emerald-600 text-white p-3 rounded-xl font-bold">Kaydet</button></>}</div></div></div>}
                     </div>
                 );
             };
@@ -404,7 +280,6 @@
             root.render(<App />);
         
         } catch (error) {
-            // HATA OLURSA BURAYA DÜŞER
             document.getElementById('error-box').style.display = 'block';
             document.getElementById('error-box').innerText = "KRİTİK HATA: " + error.message;
         }
