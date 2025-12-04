@@ -8,51 +8,44 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#065f46">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1165/1165187.png">
-    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/1165/1165187.png">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/33/33736.png">
+    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/33/33736.png">
     
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-database-compat.js"></script>
     
     <style>
-        /* YENİ SPORTİF FONT: Russo One */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=Russo+One&display=swap');
-        
         body { font-family: 'Inter', sans-serif; background-color: #f0fdf4; }
         .font-sport { font-family: 'Russo One', sans-serif; letter-spacing: 1px; }
-        
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .logo-container { width: 40px; height: 40px; overflow: hidden; border-radius: 50%; border: 2px solid #bef264; position: relative; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
         .student-photo-sm { width: 36px; height: 36px; overflow: hidden; border-radius: 50%; border: 2px solid #fff; object-fit: cover; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .logo-img { width: 100%; height: 100%; object-fit: cover; }
         .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
-        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        .animate-slide-up { animation: slideUp 0.5s ease-out forwards; }
-        
-        /* PREMIUM TASARIM */
         .bg-tennis-court {
             background-image: linear-gradient(to bottom, rgba(240, 253, 244, 0.9), rgba(240, 253, 244, 0.95)), url('https://images.unsplash.com/photo-1575361204480-aadea2534679?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
+            background-size: cover; background-position: center; background-attachment: fixed;
         }
         .glass-card { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.3); box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07); }
         .glass-modal { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.2); }
         .welcome-bg { background-image: linear-gradient(to bottom, rgba(6, 95, 70, 0.8), rgba(6, 78, 59, 0.9)), url('https://images.unsplash.com/photo-1622163642998-1ea36b1ad565?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'); background-size: cover; background-position: center; }
         .floating-nav { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-top: 1px solid rgba(255, 255, 255, 0.3); box-shadow: 0 -4px 20px rgba(0,0,0,0.05); border-radius: 24px 24px 0 0; margin: 0 10px; }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .animate-slide-up { animation: slideUp 0.5s ease-out forwards; }
     </style>
 </head>
 <body class="bg-tennis-court min-h-screen">
     <div id="root"></div>
 
-    <script type="module">
-        // --- FIREBASE BAĞLANTISI (Senin Kodların) ---
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getDatabase, ref, onValue, set, push, remove, update } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
-
+    <script type="text/babel">
+        // --- 1. FIREBASE BAŞLATMA (GARANTİ YÖNTEM) ---
         const firebaseConfig = {
             apiKey: "AIzaSyDaOllootHtCrBEKEILkvq9cXTTNvZJ38Q",
             authDomain: "diyarbakir-tenis.firebaseapp.com",
@@ -63,254 +56,74 @@
             measurementId: "G-LX8YKZL8MY",
             databaseURL: "https://diyarbakir-tenis-default-rtdb.firebaseio.com/" 
         };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
 
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-
+        // --- 2. UYGULAMA KODLARI ---
         const { useState, useEffect, useMemo, useRef } = React;
 
-        // --- İKONLAR ---
+        // İKONLAR
         const Icon = ({ name, size = 20, className }) => {
-            const icons = {
-                ChartPie: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>,
-                Settings: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>,
-                Key: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>,
-                Camera: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>,
-                UserCheck: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>,
-                UserX: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="18" y1="8" x2="23" y2="13"/><line x1="23" y1="8" x2="18" y2="13"/></svg>,
-                Plus: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
-                Minus: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="5" y1="12" x2="19" y2="12"/></svg>,
-                ChevronLeft: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="15 18 9 12 15 6"/></svg>,
-                ChevronRight: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="9 18 15 12 9 6"/></svg>,
-                Trash2: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>,
-                Calendar: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
-                Lock: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>,
-                UserSquare: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="12" cy="10" r="3"/><path d="M7 21v-2a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"/></svg>,
-                LogOut: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>,
-                Layers: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>,
-                Users: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
-                Phone: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>,
-                Info: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>,
-                UserPlus: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>,
-                Mail: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>,
-                Edit: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
-                AlertCircle: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>,
-                CheckSquare: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>,
-                Square: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/></svg>,
-                Star: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            const i = {
+                ChartPie: <path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>,
+                Settings: <><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></>,
+                Key: <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>,
+                Camera: <><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></>,
+                UserCheck: <><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></>,
+                UserX: <><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="18" y1="8" x2="23" y2="13"/><line x1="23" y1="8" x2="18" y2="13"/></>,
+                Plus: <><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></>,
+                Minus: <line x1="5" y1="12" x2="19" y2="12"/>,
+                ChevronLeft: <polyline points="15 18 9 12 15 6"/>,
+                ChevronRight: <polyline points="9 18 15 12 9 6"/>,
+                Trash2: <><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></>,
+                Calendar: <><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></>,
+                Lock: <><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></>,
+                UserSquare: <><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="12" cy="10" r="3"/><path d="M7 21v-2a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"/></>,
+                LogOut: <><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></>,
+                Layers: <><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></>,
+                Users: <><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></>,
+                Phone: <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>,
+                Info: <><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></>,
+                UserPlus: <><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></>,
+                Mail: <><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></>,
+                Edit: <><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></>,
+                AlertCircle: <><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></>,
+                CheckSquare: <><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></>,
+                Square: <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>,
+                Star: <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
             };
-            return icons[name] || null;
+            return <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>{i[name]}</svg>;
         };
 
-        const getDayNameFromDate = (dateStr) => {
-            const date = new Date(dateStr);
-            const days = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
-            return days[date.getDay()];
-        };
-        const getStatusColor = (status) => status === 'present' ? 'bg-lime-500' : status === 'absent' ? 'bg-red-500' : 'bg-gray-200';
-        const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
+        const getStatusColor = (s) => s === 'present' ? 'bg-lime-500' : s === 'absent' ? 'bg-red-500' : 'bg-gray-200';
 
-        // --- BİLEŞENLER ---
-        const Header = ({ title, showBack = false, onBack, userRole, currentCoach, onShowLogin, onLogout, logoUrl, onLogoUpdate, onOpenSettings }) => {
-            const fileInputRef = useRef(null);
-            const handleLogoClick = () => { if(userRole === 'admin' && fileInputRef.current) fileInputRef.current.click(); };
-            const handleFileChange = (e) => {
-                const file = e.target.files[0];
-                if(file) {
-                    const reader = new FileReader();
-                    reader.onloadend = () => onLogoUpdate(reader.result);
-                    reader.readAsDataURL(file);
-                }
-            };
-            return (
-                <div className="bg-emerald-900/90 backdrop-blur-md p-4 text-white shadow-lg flex justify-between items-center sticky top-0 z-30 border-b border-white/10">
-                    <div className="flex items-center gap-3">
-                        {showBack ? (
-                            <button onClick={onBack} className="bg-white/10 p-2 rounded-full hover:bg-white/20 transition-colors"><Icon name="ChevronLeft" size={24} /></button>
-                        ) : (
-                            <div onClick={handleLogoClick} className={`logo-container bg-white flex items-center justify-center shadow-lg ${userRole === 'admin' ? 'cursor-pointer hover:opacity-80' : ''}`}>
-                                <img src={logoUrl} alt="Logo" className="logo-img" />
-                                {userRole === 'admin' && <div className="absolute inset-0 bg-black/30 flex items-center justify-center text-white opacity-0 hover:opacity-100"><Icon name="Camera" size={16} /></div>}
-                                <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
-                            </div>
-                        )}
-                        <div>
-                            <h1 className="text-lg font-bold leading-tight tracking-tight font-sport">{title}</h1>
-                            {!showBack && <p className="text-[10px] text-emerald-200 uppercase tracking-wider font-medium">{userRole === 'admin' ? 'YÖNETİCİ MODU' : userRole === 'coach' ? `ANTRENÖR: ${currentCoach ? currentCoach.toUpperCase() : ''}` : 'MİSAFİR MODU'}</p>}
-                        </div>
-                    </div>
-                    <div className="flex gap-2">
-                        {userRole === 'admin' && <button onClick={onOpenSettings} className="p-2 rounded-full bg-emerald-800/50 text-white border border-white/20 shadow hover:bg-emerald-700/50 backdrop-blur-sm"><Icon name="Settings" size={20} /></button>}
-                        {userRole === 'guest' ? <button onClick={onShowLogin} className="p-2 rounded-full bg-emerald-900 border-emerald-700 text-emerald-400 border-2"><Icon name="Lock" size={20} /></button> : <button onClick={onLogout} className="p-2 rounded-full bg-red-500/80 text-white border border-red-400 shadow hover:bg-red-600/80 backdrop-blur-sm"><Icon name="LogOut" size={20} /></button>}
-                    </div>
-                </div>
-            );
-        };
-
-        const HorizontalCalendar = ({ selectedDate, onSelectDate }) => {
-            const days = useMemo(() => {
-                const result = []; const current = new Date(selectedDate);
-                for (let i = -14; i <= 14; i++) { const d = new Date(current); d.setDate(current.getDate() + i); if (d.getDay() === 0 || d.getDay() === 6) result.push(d); }
-                return result.sort((a, b) => a - b);
-            }, [selectedDate]);
-            return (
-                <div className="flex gap-2 overflow-x-auto no-scrollbar py-4 px-4 bg-emerald-900/90 backdrop-blur-md text-white shadow-inner border-b border-white/10">
-                    {days.map((date, idx) => {
-                        const dateStr = date.toISOString().split('T')[0];
-                        const isSelected = dateStr === selectedDate;
-                        const dateObj = new Date(dateStr);
-                        return (
-                            <button key={idx} onClick={() => onSelectDate(dateStr)} className={`flex flex-col items-center justify-center min-w-[58px] p-2 rounded-2xl transition-all border ${isSelected ? 'bg-lime-400 text-emerald-900 font-bold shadow-lg scale-105 border-lime-300' : 'hover:bg-white/10 text-emerald-100 border-transparent'}`}>
-                                <span className="text-[10px] uppercase opacity-80 font-medium">{new Intl.DateTimeFormat('tr-TR', { weekday: 'short' }).format(dateObj)}</span>
-                                <span className="text-xl font-black tracking-tight">{dateObj.getDate()}</span>
-                                <span className="text-[9px] opacity-70 uppercase font-medium">{new Intl.DateTimeFormat('tr-TR', { month: 'short' }).format(dateObj)}</span>
-                            </button>
-                        );
-                    })}
-                </div>
-            );
-        };
-
-        const ConfirmationDialog = ({ isOpen, message, onConfirm, onCancel }) => {
-            if (!isOpen) return null;
-            return (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-[60] animate-[fadeIn_0.1s_ease-out]">
-                    <div className="glass-modal rounded-3xl shadow-2xl w-full max-w-xs overflow-hidden p-6 text-center">
-                        <div className="bg-red-100/80 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-red-500 shadow-sm"><Icon name="AlertCircle" size={32}/></div>
-                        <h3 className="text-lg font-bold text-gray-800 mb-2">Emin misiniz?</h3>
-                        <p className="text-sm text-gray-600 mb-6 leading-relaxed font-medium">{message}</p>
-                        <div className="flex gap-3"><button onClick={onCancel} className="flex-1 py-3 bg-gray-100/80 text-gray-700 rounded-2xl font-bold hover:bg-gray-200/80">İptal</button><button onClick={onConfirm} className="flex-1 py-3 bg-red-500 text-white rounded-2xl font-bold hover:bg-red-600">Evet</button></div>
-                    </div>
-                </div>
-            );
-        };
-
-        const WelcomeScreen = ({ onAdminClick, onCoachClick, logoUrl }) => (
-            <div className="min-h-screen welcome-bg flex flex-col items-center justify-center p-6 relative overflow-hidden">
-                <div className="absolute inset-0 bg-black/30"></div>
-                <div className="glass-card p-8 rounded-[40px] w-full max-w-sm shadow-2xl animate-slide-up flex flex-col items-center z-10 border-t-white/50">
-                    <div className="bg-white p-4 rounded-full shadow-xl mb-6 ring-4 ring-white/30"><img src={logoUrl} alt="Logo" className="w-28 h-28 object-cover rounded-full" /></div>
-                    <h1 className="text-4xl font-black text-white text-center mb-2 drop-shadow-lg tracking-tight font-sport">Diyarbakır</h1>
-                    <h2 className="text-xl font-bold text-lime-300 text-center mb-10 tracking-[0.2em] drop-shadow font-sport">TENİS KULÜBÜ</h2>
-                    <div className="w-full space-y-4">
-                        <button onClick={onCoachClick} className="w-full bg-lime-500 hover:bg-lime-400 text-emerald-900 font-bold py-4 px-6 rounded-3xl transition-all transform hover:scale-[1.02] shadow-lg flex items-center justify-center gap-3 text-lg"><Icon name="UserSquare" size={24} /> ANTRENÖR GİRİŞİ</button>
-                        <button onClick={onAdminClick} className="w-full bg-lime-500 hover:bg-lime-400 text-black font-bold py-4 px-6 rounded-3xl transition-all transform hover:scale-[1.02] shadow-lg flex items-center justify-center gap-3 text-lg border-2 border-transparent"><Icon name="Lock" size={20} /> YÖNETİCİ GİRİŞİ</button>
-                    </div>
-                    <p className="mt-10 text-white/70 text-xs font-medium">© 2025 DTK App v6.1 Online</p>
-                </div>
-            </div>
-        );
-
-        const StudentProfileModal = ({ student, groups, onClose }) => {
-            const [viewDate, setViewDate] = useState(new Date());
-            const changeMonth = (offset) => { const d = new Date(viewDate); d.setMonth(d.getMonth() + offset); setViewDate(d); };
-            const year = viewDate.getFullYear();
-            const month = viewDate.getMonth();
-            const daysInMonth = getDaysInMonth(year, month);
-            const firstDay = new Date(year, month, 1).getDay();
-            const startingSlot = firstDay === 0 ? 6 : firstDay - 1;
-            const detailedRecords = useMemo(() => {
-                const details = [];
-                groups.forEach(g => {
-                    if(g.players && g.players.some(pl => pl.id === student.id) && g.records) {
-                        Object.entries(g.records).forEach(([ds, st]) => {
-                            const s = st[student.id];
-                            if(s) {
-                                const rd = new Date(ds);
-                                if(rd.getFullYear() === year && rd.getMonth() === month) {
-                                    details.push({ date: ds, status: s, groupName: g.name });
-                                }
-                            }
-                        });
-                    }
-                });
-                return details.sort((a, b) => new Date(a.date) - new Date(b.date));
-            }, [groups, student, year, month]);
-            const pCount = detailedRecords.filter(r => r.status === 'present').length;
-            const aCount = detailedRecords.filter(r => r.status === 'absent').length;
-            return (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-50">
-                    <div className="glass-modal rounded-3xl w-full max-w-sm overflow-hidden max-h-[80vh] flex flex-col shadow-2xl">
-                        <div className="bg-emerald-800/90 p-5 text-white flex justify-between flex-shrink-0 items-center backdrop-blur-md">
-                            <div className="flex items-center gap-4">
-                                {student.photo ? <img src={student.photo} className="w-14 h-14 rounded-full border-4 border-white/30 object-cover shadow-sm" /> : <div className="w-14 h-14 rounded-full bg-emerald-700 border-4 border-white/30 flex items-center justify-center font-bold text-xl">?</div>}
-                                <div><h2 className="text-2xl font-bold tracking-tight">{student.name}</h2><p className="text-sm opacity-90 font-medium flex items-center gap-2"><Icon name="Phone" size={14}/> {student.phone} | {student.age} Yaş</p></div>
-                            </div>
-                            <button onClick={onClose} className="bg-white/20 p-2 rounded-full hover:bg-white/30 transition-colors"><Icon name="Minus" size={20}/></button>
-                        </div>
-                        <div className="p-5 overflow-y-auto bg-white/60 backdrop-blur-md flex-1">
-                            <div className="flex gap-3 mb-6 text-center"><div className="flex-1 bg-lime-500/10 p-3 rounded-2xl border border-lime-500/30 shadow-sm"><div className="text-3xl font-black text-lime-600">{pCount}</div><div className="text-[10px] font-bold text-lime-700 uppercase tracking-wider">BU AY KATILIM</div></div><div className="flex-1 bg-red-500/10 p-3 rounded-2xl border border-red-500/30 shadow-sm"><div className="text-3xl font-black text-red-600">{aCount}</div><div className="text-[10px] font-bold text-red-700 uppercase tracking-wider">BU AY YOK</div></div></div>
-                            <div className="flex justify-between mb-4 items-center bg-white/40 p-2 rounded-xl"><button onClick={() => changeMonth(-1)} className="p-1"><Icon name="ChevronLeft"/></button><span className="font-bold text-lg text-gray-800">{new Intl.DateTimeFormat('tr-TR', { month: 'long', year: 'numeric' }).format(viewDate)}</span><button onClick={() => changeMonth(1)} className="p-1"><Icon name="ChevronRight"/></button></div>
-                            <div className="grid grid-cols-7 gap-2 text-center text-xs mb-2 font-bold text-gray-500 uppercase tracking-widest"><span>Pt</span><span>Sa</span><span>Ça</span><span>Pe</span><span>Cu</span><span>Ct</span><span>Pa</span></div>
-                            <div className="grid grid-cols-7 gap-2 mb-6 p-2 bg-white/40 rounded-2xl">
-                                {Array.from({length: startingSlot}).map((_, i) => <div key={`e-${i}`} />)}
-                                {Array.from({length: daysInMonth}).map((_, i) => {
-                                    const d = i + 1; const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-                                    const record = detailedRecords.find(r => r.date === dateStr);
-                                    const status = record ? record.status : null;
-                                    return <div key={d} className="aspect-square flex items-center justify-center rounded-xl font-bold text-sm border-2 border-transparent relative overflow-hidden ${!status ? 'text-gray-400' : 'text-gray-800'}"><span className="z-10">{d}</span>{status==='present'&&<div className="absolute inset-0 bg-lime-400 rounded-xl border-2 border-lime-500 opacity-80"></div>}{status==='absent'&&<div className="absolute inset-0 bg-red-400 rounded-xl border-2 border-red-500 opacity-80"></div>}</div>
-                                })}
-                            </div>
-                            <div className="space-y-2 border-t border-gray-200/50 pt-4">
-                                {detailedRecords.length === 0 ? <p className="text-sm text-center text-gray-500 font-medium py-4">Bu ay kayıt bulunamadı.</p> : detailedRecords.map((r, idx) => (
-                                    <div key={idx} className="flex justify-between text-sm p-3 bg-white/70 rounded-xl shadow-sm border border-white/50 items-center">
-                                        <span className="text-gray-600 font-medium flex items-center gap-2"><Icon name="Calendar" size={14} className="text-gray-400"/> {new Intl.DateTimeFormat('tr-TR', {day:'numeric', month:'long'}).format(new Date(r.date))}</span>
-                                        <span className="text-gray-800 font-bold truncate max-w-[100px]">{r.groupName}</span>
-                                        <span className={`font-black px-2 py-1 rounded-lg text-xs uppercase ${r.status === 'present' ? 'bg-lime-100 text-lime-700' : 'bg-red-100 text-red-700'}`}>{r.status === 'present' ? 'GELDİ' : 'GELMEDİ'}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            );
-        };
-
-        const AdminReportsView = ({ groups, students }) => {
-            const currentMonth = new Date().getMonth();
-            const currentYear = new Date().getFullYear();
-            const totalLessonsThisMonth = useMemo(() => {
-                let count = 0; groups.forEach(g => { if(g.records) Object.keys(g.records).forEach(dateStr => { const d = new Date(dateStr); if(d.getMonth() === currentMonth && d.getFullYear() === currentYear) count++; }); }); return count;
-            }, [groups]);
-            const topStudents = useMemo(() => {
-                const list = []; students.forEach(s => { let present = 0; groups.forEach(g => { if(g.players && g.players.some(p => p.id === s.id) && g.records) Object.values(g.records).forEach(rec => { if(rec[s.id] === 'present') present++; }); }); if(present > 0) list.push({ ...s, present }); }); return list.sort((a,b) => b.present - a.present).slice(0, 5);
-            }, [students, groups]);
-            const riskyStudents = useMemo(() => {
-                const risks = []; students.forEach(s => { let total = 0; let absent = 0; groups.forEach(g => { if(g.players && g.players.some(p => p.id === s.id) && g.records) Object.values(g.records).forEach(rec => { if(rec[s.id]) { total++; if(rec[s.id] === 'absent') absent++; } }); }); if(total > 2) { const ratio = absent / total; if(ratio > 0.3) risks.push({ ...s, ratio: Math.round(ratio * 100), total, absent }); } }); return risks.sort((a,b) => b.ratio - a.ratio);
-            }, [students, groups]);
-
-            return (
-                <div className="p-4 space-y-6 pb-32">
-                    <div className="glass-card p-6 rounded-3xl border-l-8 border-lime-400 flex items-center justify-between"><div><div className="text-gray-500 font-bold text-xs uppercase tracking-wider">BU AY YAPILAN</div><div className="text-4xl font-black text-gray-800 mt-1">TOPLAM DERS</div></div><div className="text-5xl font-black text-lime-600">{totalLessonsThisMonth}</div></div>
-                    <div className="glass-card p-6 rounded-3xl"><h3 className="font-black text-gray-800 mb-4 flex items-center gap-2"><Icon name="Star" className="text-yellow-500"/> EN DEVAMLI ÖĞRENCİLER</h3><div className="space-y-3">{topStudents.length === 0 ? <p className="text-center text-gray-400 text-sm">Henüz veri yok.</p> : topStudents.map((s, i) => (<div key={i} className="flex items-center justify-between p-3 bg-white/60 rounded-xl border border-white/50"><div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-yellow-100 text-yellow-700 flex items-center justify-center font-bold text-sm">{i+1}</div><span className="font-bold text-gray-700">{s.name}</span></div><span className="font-black text-emerald-600 text-lg">{s.present} <span className="text-xs font-normal text-gray-400">Ders</span></span></div>))}</div></div>
-                    <div className="glass-card p-6 rounded-3xl border-l-8 border-red-400"><h3 className="font-black text-gray-800 mb-4 flex items-center gap-2"><Icon name="AlertCircle" className="text-red-500"/> RİSKLİ ÖĞRENCİLER</h3><div className="space-y-3">{riskyStudents.length === 0 ? <p className="text-center text-gray-400 text-sm py-2">Riskli öğrenci yok. Harika!</p> : riskyStudents.map((s, i) => (<div key={i} className="flex items-center justify-between p-3 bg-red-50/50 rounded-xl border border-red-100"><div><div className="font-bold text-gray-800">{s.name}</div><div className="text-xs text-red-400 font-medium">{s.absent} devamsızlık / {s.total} ders</div></div><div className="bg-red-100 text-red-600 px-3 py-1 rounded-lg font-black text-sm">%{s.ratio}</div></div>))}</div></div>
-                </div>
-            );
-        };
-
+        // --- ANA UYGULAMA ---
         const App = () => {
+            // FIREBASE VERİLERİ
             const [groups, setGroups] = useState([]);
             const [definedCoaches, setDefinedCoaches] = useState([]);
             const [registeredStudents, setRegisteredStudents] = useState([]);
-            const [appLogo, setAppLogo] = useState("https://cdn-icons-png.flaticon.com/512/1165/1165187.png");
+            const [appLogo, setAppLogo] = useState("https://cdn-icons-png.flaticon.com/512/33/33736.png");
             const [adminPassword, setAdminPassword] = useState("2121");
 
+            // VERİLERİ ÇEK
             useEffect(() => {
-                onValue(ref(db, 'groups'), (snap) => setGroups(snap.val() ? Object.values(snap.val()) : []));
-                onValue(ref(db, 'coaches'), (snap) => setDefinedCoaches(snap.val() ? Object.values(snap.val()) : []));
-                onValue(ref(db, 'students'), (snap) => setRegisteredStudents(snap.val() ? Object.values(snap.val()) : []));
-                onValue(ref(db, 'logo'), (snap) => { if(snap.val()) setAppLogo(snap.val()); });
-                onValue(ref(db, 'adminPass'), (snap) => { if(snap.val()) setAdminPassword(snap.val()); });
+                db.ref('groups').on('value', s => setGroups(s.val() ? Object.values(s.val()) : []));
+                db.ref('coaches').on('value', s => setDefinedCoaches(s.val() ? Object.values(s.val()) : []));
+                db.ref('students').on('value', s => setRegisteredStudents(s.val() ? Object.values(s.val()) : []));
+                db.ref('logo').on('value', s => { if(s.val()) setAppLogo(s.val()); });
+                db.ref('adminPass').on('value', s => { if(s.val()) setAdminPassword(s.val()); });
             }, []);
 
             const [userRole, setUserRole] = useState(() => { const s = localStorage.getItem('dtk_session_v6'); return s ? JSON.parse(s).role : null; });
             const [currentCoach, setCurrentCoach] = useState(() => { const s = localStorage.getItem('dtk_session_v6'); return s ? JSON.parse(s).name : null; });
             const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-            
             const [activeGroup, setActiveGroup] = useState(null);
+            
+            // MODAL & UI STATES
             const [loginModalType, setLoginModalType] = useState(null);
-            const [isSettingsOpen, setIsSettingsOpen] = useState(false);
             const [isModalOpen, setIsModalOpen] = useState(false);
+            const [isSettingsOpen, setIsSettingsOpen] = useState(false);
             const [isCoachModalOpen, setIsCoachModalOpen] = useState(false);
             const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
             const [isAddExistingStudentModalOpen, setIsAddExistingStudentModalOpen] = useState(false);
@@ -319,6 +132,7 @@
             const [adminTab, setAdminTab] = useState('schedule');
             const [coachTab, setCoachTab] = useState('schedule');
 
+            // FORM STATES
             const [newGroupName, setNewGroupName] = useState("");
             const [newCoachName, setNewCoachName] = useState("");
             const [tempSchedule, setTempSchedule] = useState([]);
@@ -333,154 +147,107 @@
             const [selectedGroupIdForStudent, setSelectedGroupIdForStudent] = useState("");
             const [targetGroupForAdd, setTargetGroupForAdd] = useState(null);
             const [selectedMemberIds, setSelectedMemberIds] = useState([]);
-            const [changePassData, setChangePassData] = useState({ current: '', new: '', confirm: '' });
             const [editingGroup, setEditingGroup] = useState(null);
+            const [changePassData, setChangePassData] = useState({ current: '', new: '', confirm: '' });
 
             const validHours = ["11:00", "12:00", "13:00", "14:00", "15:00", "16:00"];
 
+            // ACTIONS
             const askConfirmation = (msg, action) => setConfirmModal({ isOpen: true, message: msg, onConfirm: action });
-            const closeConfirmModal = () => setConfirmModal({ isOpen: false, message: '', onConfirm: null });
-            const executeConfirm = () => { if(confirmModal.onConfirm) confirmModal.onConfirm(); closeConfirmModal(); };
-            const handleLogout = () => { setUserRole(null); setCurrentCoach(null); setActiveGroup(null); localStorage.removeItem('dtk_session_v6'); };
-            
-            const addScheduleSlot = () => { if(!tempSchedule.some(s => s.day === tempDay && s.time === tempTime)) setTempSchedule([...tempSchedule, {day: tempDay, time: tempTime}]); };
-            const removeScheduleSlot = (i) => setTempSchedule(tempSchedule.filter((_, idx) => idx !== i));
-            const openEditGroupModal = (g, e) => { e.stopPropagation(); setEditingGroup(g); setNewGroupName(g.name); setNewCoachName(g.instructor); setTempSchedule(g.schedule || []); setIsModalOpen(true); };
+            const executeConfirm = () => { if(confirmModal.onConfirm) confirmModal.onConfirm(); setConfirmModal({isOpen:false, message:'', onConfirm:null}); };
+            const handleLogout = () => { setUserRole(null); setCurrentCoach(null); localStorage.removeItem('dtk_session_v6'); };
+
+            // FIREBASE ACTIONS
             const handleSaveGroup = (e) => {
-                e.preventDefault(); if(tempSchedule.length===0){alert("Saat ekle!"); return;}
-                if(editingGroup) update(ref(db, `groups/${editingGroup.id}`), { name: newGroupName, instructor: newCoachName, schedule: tempSchedule });
-                else { const id = Date.now(); set(ref(db, `groups/${id}`), { id, name: newGroupName, instructor: newCoachName, schedule: tempSchedule, players: [], records: {} }); }
+                e.preventDefault(); if(tempSchedule.length===0){alert("Saat ekle!");return;}
+                if(editingGroup) db.ref(`groups/${editingGroup.id}`).update({ name: newGroupName, instructor: newCoachName, schedule: tempSchedule });
+                else { const id = Date.now(); db.ref(`groups/${id}`).set({ id, name: newGroupName, instructor: newCoachName, schedule: tempSchedule, players: [] }); }
                 setIsModalOpen(false); setEditingGroup(null); setNewGroupName(""); setTempSchedule([]);
             };
-            const handleDeleteGroup = (id, e) => { e.stopPropagation(); askConfirmation("Silmek istiyor musun?", () => remove(ref(db, `groups/${id}`))); };
+            const handleDeleteGroup = (id, e) => { e.stopPropagation(); askConfirmation("Silmek istiyor musun?", () => db.ref(`groups/${id}`).remove()); };
+            
+            const handleAddCoach = (e) => { e.preventDefault(); if(definedCoaches.some(c=>c.email===newInstEmail)) return alert("Kayıtlı!"); const id=Date.now(); db.ref(`coaches/${id}`).set({id, name:newInstName, email:newInstEmail, password:null}); setIsCoachModalOpen(false); setNewInstName(""); setNewInstEmail(""); };
+            const handleDeleteCoach = (id) => askConfirmation("Sil?", ()=>db.ref(`coaches/${id}`).remove());
+            const handleResetCoachPassword = (id) => askConfirmation("Şifre 1234 olsun mu?", ()=>{db.ref(`coaches/${id}`).update({password:"1234"}); alert("Sıfırlandı.");});
 
-            const handleAddCoach = (e) => {
-                e.preventDefault(); if(definedCoaches.some(c=>c.email===newInstEmail)){alert("E-posta kayıtlı!"); return;}
-                const id = Date.now(); set(ref(db, `coaches/${id}`), { id, name: newInstName, email: newInstEmail, password: null });
-                setIsCoachModalOpen(false); setNewInstName(""); setNewInstEmail("");
-            };
-            const handleDeleteCoach = (id) => askConfirmation("Antrenörü sil?", () => remove(ref(db, `coaches/${id}`)));
-            const handleResetCoachPassword = (id) => askConfirmation("Şifre 1234 olsun mu?", () => { update(ref(db, `coaches/${id}`), { password: "1234" }); alert("Sıfırlandı."); });
-
-            const photoInputRef = useRef(null);
-            const handlePhotoChange = (e) => { const f = e.target.files[0]; if(f){ const r = new FileReader(); r.onloadend=()=>setNewStudentPhoto(r.result); r.readAsDataURL(f); } };
+            const handlePhotoChange = (e) => { const f=e.target.files[0]; if(f){const r=new FileReader(); r.onloadend=()=>setNewStudentPhoto(r.result); r.readAsDataURL(f);} };
             const handleAddStudentGlobal = (e) => {
                 e.preventDefault(); if(!newStudentName.trim()) return;
-                const id = Date.now();
-                const student = { id, name: newStudentName, age: newStudentAge, phone: newStudentPhone, photo: newStudentPhoto };
-                set(ref(db, `students/${id}`), student);
-                if(selectedGroupIdForStudent) {
-                    const g = groups.find(x=>x.id==selectedGroupIdForStudent);
-                    if(g) update(ref(db, `groups/${g.id}`), { players: [...(g.players||[]), student] });
-                }
+                const id=Date.now(); const s={id, name:newStudentName, age:newStudentAge, phone:newStudentPhone, photo:newStudentPhoto};
+                db.ref(`students/${id}`).set(s);
+                if(selectedGroupIdForStudent) { const g=groups.find(x=>x.id==selectedGroupIdForStudent); if(g) db.ref(`groups/${g.id}`).update({players:[...(g.players||[]), s]}); }
                 setIsStudentModalOpen(false); setNewStudentName(""); setNewStudentPhoto(null); setSelectedGroupIdForStudent("");
             };
+            const handleDeleteStudentFromRegistry = (id) => askConfirmation("Öğrenciyi sil?", () => {
+                db.ref(`students/${id}`).remove();
+                groups.forEach(g=>{ if(g.players?.some(p=>p.id===id)) db.ref(`groups/${g.id}`).update({players: g.players.filter(p=>p.id!==id)}); });
+            });
+
             const handleAddPlayerFromDetail = (e) => {
                 e.preventDefault(); if(!newStudentName.trim()) return;
-                const id = Date.now();
-                const student = { id, name: newStudentName, age: newStudentAge, phone: newStudentPhone, photo: null };
-                if(!registeredStudents.some(s=>s.id===id)) set(ref(db, `students/${id}`), student);
-                const g = groups.find(x=>x.id===activeGroup.id);
-                if(g) update(ref(db, `groups/${g.id}`), { players: [...(g.players||[]), student] });
+                const id=Date.now(); const s={id, name:newStudentName, age:newStudentAge, phone:newStudentPhone, photo:null};
+                if(!registeredStudents.some(r=>r.id===id)) db.ref(`students/${id}`).set(s);
+                const g=groups.find(x=>x.id===activeGroup.id);
+                if(g) db.ref(`groups/${g.id}`).update({players:[...(g.players||[]), s]});
                 setNewStudentName("");
             };
-            const handleToggleSelection = (id) => setSelectedMemberIds(prev => prev.includes(id) ? prev.filter(x=>x!==id) : [...prev, id]);
+            const handleRemovePlayerFromGroup = (gid, pid) => askConfirmation("Gruptan çıkar?", () => {
+                const g=groups.find(x=>x.id===gid);
+                if(g) { const np=g.players.filter(p=>p.id!==pid); db.ref(`groups/${gid}`).update({players:np}); if(activeGroup && activeGroup.id===gid) setActiveGroup({...g, players:np}); }
+            });
             const handleAddMultipleExistingStudents = (e) => {
-                e.preventDefault();
-                const g = groups.find(x=>x.id===targetGroupForAdd.id);
+                e.preventDefault(); const g=groups.find(x=>x.id===targetGroupForAdd.id);
                 if(g && selectedMemberIds.length>0) {
-                    const newPlayers = [...(g.players||[])];
-                    selectedMemberIds.forEach(sid => {
-                        const s = registeredStudents.find(x=>x.id===sid);
-                        if(s && !newPlayers.some(p=>p.id===sid)) newPlayers.push(s);
-                    });
-                    update(ref(db, `groups/${g.id}`), { players: newPlayers });
+                    const np=[...(g.players||[])];
+                    selectedMemberIds.forEach(sid=>{ const s=registeredStudents.find(x=>x.id===sid); if(s && !np.some(p=>p.id===sid)) np.push(s); });
+                    db.ref(`groups/${g.id}`).update({players:np});
                 }
                 setIsAddExistingStudentModalOpen(false); setSelectedMemberIds([]);
             };
-            const handleDeleteStudentFromRegistry = (id) => askConfirmation("Öğrenciyi tamamen sil?", () => {
-                remove(ref(db, `students/${id}`));
-                groups.forEach(g => {
-                    if(g.players && g.players.some(p=>p.id===id)) {
-                        update(ref(db, `groups/${g.id}`), { players: g.players.filter(p=>p.id!==id) });
-                    }
-                });
-            });
-            const handleRemovePlayerFromGroup = (gid, pid) => askConfirmation("Gruptan çıkar?", () => {
-                const g = groups.find(x=>x.id===gid);
-                if(g) {
-                    const newPlayers = g.players.filter(p=>p.id!==pid);
-                    update(ref(db, `groups/${gid}`), { players: newPlayers });
-                    if(activeGroup && activeGroup.id===gid) setActiveGroup({...g, players: newPlayers});
-                }
-            });
 
-            const handleLogoUpdate = (url) => set(ref(db, 'logo'), url);
-            const handleChangeAdminPassword = (e) => {
-                e.preventDefault();
-                if(changePassData.current!==adminPassword) return alert("Yanlış şifre!");
-                if(changePassData.new!==changePassData.confirm) return alert("Uyuşmuyor!");
-                set(ref(db, 'adminPass'), changePassData.new); setIsSettingsOpen(false); alert("Değişti.");
-            };
-
-            const getAttendanceInfo = (g, date) => {
-                const r = g.records && g.records[date];
-                if(!r) return { taken: false, presentCount: 0 };
-                return { taken: Object.keys(r).length>0, presentCount: Object.values(r).filter(x=>x==='present').length };
-            };
             const toggleAttendance = (pid, status) => {
-                const g = groups.find(x=>x.id===activeGroup.id);
+                const g=groups.find(x=>x.id===activeGroup.id);
                 if(g) {
-                    const current = g.records && g.records[selectedDate] ? g.records[selectedDate][pid] : null;
-                    const val = current === status ? null : status;
-                    if(val===null) remove(ref(db, `groups/${g.id}/records/${selectedDate}/${pid}`));
-                    else set(ref(db, `groups/${g.id}/records/${selectedDate}/${pid}`), val);
+                    const cur = g.records?.[selectedDate]?.[pid];
+                    const val = cur === status ? null : status;
+                    if(val===null) db.ref(`groups/${g.id}/records/${selectedDate}/${pid}`).remove();
+                    else db.ref(`groups/${g.id}/records/${selectedDate}/${pid}`).set(val);
                 }
             };
 
+            const handleLogoUpdate = (u) => db.ref('logo').set(u);
+            const handleChangeAdminPassword = (e) => { e.preventDefault(); if(changePassData.current!==adminPassword) return alert("Yanlış!"); if(changePassData.new!==changePassData.confirm) return alert("Uyuşmuyor!"); db.ref('adminPass').set(changePassData.new); setIsSettingsOpen(false); alert("Değişti."); };
+
+            // COMPONENTS
             const LoginComp = () => {
-                const [s, setS] = useState('email'); const [m, setM] = useState(''); const [p, setP] = useState(''); const [cp, setCp] = useState(''); const [err, setErr] = useState(''); const [found, setFound] = useState(null);
+                const [s, setS]=useState('email'); const [m, setM]=useState(''); const [p, setP]=useState(''); const [err, setErr]=useState(''); const [found, setFound]=useState(null);
                 useEffect(()=>{setS('email'); setM(''); setP(''); setErr('');}, [loginModalType]);
-                const handleLogin = (e) => {
+                const login = (e) => {
                     e.preventDefault();
-                    if(loginModalType==='admin') {
-                        if(p===adminPassword) { setUserRole('admin'); localStorage.setItem('dtk_session_v6', JSON.stringify({role:'admin'})); setLoginModalType(null); }
-                        else setErr('Hatalı şifre');
-                    } else {
-                        if(s==='email') {
-                            const c = definedCoaches.find(x=>x.email===m);
-                            if(c) { setFound(c); setS(c.password ? 'password' : 'set-pass'); setErr(''); } else setErr('Bulunamadı');
-                        } else if(s==='password') {
-                            if(found.password===p) { setUserRole('coach'); setCurrentCoach(found.name); localStorage.setItem('dtk_session_v6', JSON.stringify({role:'coach', name:found.name})); setLoginModalType(null); } else setErr('Yanlış şifre');
-                        } else {
-                            if(p!==cp) return setErr('Uyuşmuyor');
-                            update(ref(db, `coaches/${found.id}`), { password: p });
-                            setUserRole('coach'); setCurrentCoach(found.name); localStorage.setItem('dtk_session_v6', JSON.stringify({role:'coach', name:found.name})); setLoginModalType(null);
-                        }
+                    if(loginModalType==='admin') { if(p===adminPassword){setUserRole('admin'); localStorage.setItem('dtk_session_v6', JSON.stringify({role:'admin'})); setLoginModalType(null);} else setErr('Hatalı şifre'); }
+                    else {
+                        if(s==='email') { const c=definedCoaches.find(x=>x.email===m); if(c){setFound(c); setS(c.password?'password':'set'); setErr('');} else setErr('Bulunamadı'); }
+                        else if(s==='password') { if(found.password===p){setUserRole('coach'); setCurrentCoach(found.name); localStorage.setItem('dtk_session_v6', JSON.stringify({role:'coach',name:found.name})); setLoginModalType(null);} else setErr('Yanlış'); }
+                        else { db.ref(`coaches/${found.id}`).update({password:p}); setUserRole('coach'); setCurrentCoach(found.name); localStorage.setItem('dtk_session_v6', JSON.stringify({role:'coach',name:found.name})); setLoginModalType(null); }
                     }
                 };
                 if(!loginModalType) return null;
-                return (
-                    <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-50">
-                        <div className="glass-modal rounded-[32px] p-8 w-full max-w-sm relative">
-                            <button onClick={()=>setLoginModalType(null)} className="absolute top-4 right-4 font-bold text-gray-500">✕</button>
-                            <h2 className="text-2xl font-black text-center mb-6">{loginModalType==='admin'?'Yönetici':'Antrenör'} Girişi</h2>
-                            <form onSubmit={handleLogin} className="space-y-4">
-                                {loginModalType==='coach' && s==='email' && <input className="w-full border-2 p-3 rounded-xl" placeholder="Email" value={m} onChange={e=>setM(e.target.value)} required type="email"/>}
-                                {(loginModalType==='admin' || s!=='email') && <input className="w-full border-2 p-3 rounded-xl" placeholder="Şifre" type="password" value={p} onChange={e=>setP(e.target.value)} autoFocus/>}
-                                {s==='set-pass' && <input className="w-full border-2 p-3 rounded-xl" placeholder="Tekrar" type="password" value={cp} onChange={e=>setCp(e.target.value)}/>}
-                                {err && <p className="text-red-500 text-sm text-center">{err}</p>}
-                                <button className="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold">Giriş</button>
-                            </form>
-                        </div>
-                    </div>
-                );
+                return <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50"><div className="glass-modal rounded-[32px] p-8 w-full max-w-sm relative"><button onClick={()=>setLoginModalType(null)} className="absolute top-4 right-4 font-bold">✕</button><h2 className="text-2xl font-black text-center mb-6">{loginModalType==='admin'?'Yönetici':'Antrenör'} Girişi</h2><form onSubmit={login} className="space-y-4">{loginModalType==='coach' && s==='email' && <input className="w-full border-2 p-3 rounded-xl" placeholder="Email" value={m} onChange={e=>setM(e.target.value)} required type="email"/>}{(loginModalType==='admin' || s!=='email') && <input className="w-full border-2 p-3 rounded-xl" placeholder="Şifre" type="password" value={p} onChange={e=>setP(e.target.value)} autoFocus/>}<button className="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold">Giriş Yap</button>{err && <p className="text-red-500 text-center">{err}</p>}</form></div></div>;
             };
 
+            const ReportsView = () => {
+                const m=new Date().getMonth(), y=new Date().getFullYear();
+                const total=useMemo(()=>{let c=0; groups.forEach(g=>{if(g.records)Object.keys(g.records).forEach(d=>{if(new Date(d).getMonth()===m)c++;});});return c;},[groups]);
+                const top=useMemo(()=>{const l=[]; registeredStudents.forEach(s=>{let p=0; groups.forEach(g=>{if(g.players?.some(x=>x.id===s.id) && g.records) Object.values(g.records).forEach(r=>{if(r[s.id]==='present')p++;});}); if(p>0)l.push({...s, p});}); return l.sort((a,b)=>b.p-a.p).slice(0,5);},[groups, registeredStudents]);
+                const risky=useMemo(()=>{const r=[]; registeredStudents.forEach(s=>{let t=0, a=0; groups.forEach(g=>{if(g.players?.some(x=>x.id===s.id) && g.records) Object.values(g.records).forEach(rec=>{if(rec[s.id]){t++; if(rec[s.id]==='absent')a++;}});}); if(t>2 && (a/t)>0.3) r.push({...s, ratio:Math.round((a/t)*100), a, t});}); return r.sort((a,b)=>b.ratio-a.ratio);},[groups, registeredStudents]);
+                
+                return <div className="p-4 space-y-4 pb-32"><div className="glass-card p-6 rounded-3xl border-l-8 border-lime-400 flex justify-between"><div><div className="text-xs text-gray-500 font-bold">BU AY</div><div className="text-4xl font-black">{total}</div></div><div className="text-right text-xs text-gray-400">DERS</div></div><div className="glass-card p-6 rounded-3xl"><h3 className="font-black mb-4 flex gap-2"><Icon name="Star" className="text-yellow-500"/> EN ÇALIŞKANLAR</h3>{top.map((s,i)=><div key={i} className="flex justify-between p-2 border-b"><span>{i+1}. {s.name}</span><span className="font-bold text-emerald-600">{s.p} Ders</span></div>)}</div><div className="glass-card p-6 rounded-3xl border-l-8 border-red-400"><h3 className="font-black mb-4 flex gap-2"><Icon name="AlertCircle" className="text-red-500"/> DEVAMSIZLIK RİSKİ</h3>{risky.map((s,i)=><div key={i} className="flex justify-between p-2 border-b"><span>{s.name}</span><span className="font-bold text-red-500">%{s.ratio} ({s.a}/{s.t})</span></div>)}</div></div>;
+            };
+
+            // RENDER LOGIC
             if(!userRole) return <><WelcomeScreen onAdminClick={()=>setLoginModalType('admin')} onCoachClick={()=>setLoginModalType('coach')} logoUrl={appLogo}/><LoginComp/></>;
-            
-            const currentDayName = getDayNameFromDate(selectedDate);
-            const dailyGroups = groups.filter(g => g.schedule && g.schedule.some(s => s.day === currentDayName));
+            const curDay = new Intl.DateTimeFormat('tr-TR', { weekday: 'long' }).format(new Date(selectedDate));
+            const dailyGroups = groups.filter(g => g.schedule?.some(s => s.day === curDay));
 
             return (
                 <div className="min-h-screen bg-tennis-court flex flex-col relative">
@@ -488,30 +255,15 @@
                     <div className="flex-1 overflow-y-auto">
                         {activeGroup ? (
                             <div className="p-4">
-                                <div className="glass-card p-4 rounded-3xl mb-4"><h2 className="text-xl font-black">{activeGroup.instructor}</h2><div className="text-sm text-gray-500">{currentDayName}</div></div>
+                                <div className="glass-card p-4 rounded-3xl mb-4"><h2 className="text-xl font-black">{activeGroup.instructor}</h2><div className="text-sm text-gray-500">{curDay}</div></div>
                                 {userRole==='admin' && <div className="mb-4"><form onSubmit={handleAddPlayerFromDetail} className="flex gap-2"><input value={newStudentName} onChange={e=>setNewStudentName(e.target.value)} placeholder="Hızlı Ekle..." className="flex-1 p-3 rounded-xl border"/><button className="bg-emerald-600 text-white p-3 rounded-xl">+</button></form></div>}
-                                <div className="space-y-2">
-                                    {(activeGroup.players||[]).map(p => {
-                                        const status = activeGroup.records?.[selectedDate]?.[p.id];
-                                        return (
-                                            <div key={p.id} className="glass-card p-3 rounded-xl flex justify-between items-center" onClick={()=>setViewingProfileStudent(p)}>
-                                                <div className="flex items-center gap-3"><div className={`w-3 h-3 rounded-full ${getStatusColor(status)}`}></div><span className="font-bold">{p.name}</span></div>
-                                                <div className="flex gap-2" onClick={e=>e.stopPropagation()}>
-                                                    <button onClick={()=>toggleAttendance(p.id, 'present')} className="p-2 border rounded-lg hover:bg-lime-100">✅</button>
-                                                    <button onClick={()=>toggleAttendance(p.id, 'absent')} className="p-2 border rounded-lg hover:bg-red-100">❌</button>
-                                                    {userRole==='admin' && <button onClick={()=>handleRemovePlayerFromGroup(activeGroup.id, p.id)} className="p-2 border rounded-lg text-red-500">🗑</button>}
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
+                                <div className="space-y-2">{(activeGroup.players||[]).map(p=>{const st=activeGroup.records?.[selectedDate]?.[p.id]; return <div key={p.id} className="glass-card p-3 rounded-xl flex justify-between items-center" onClick={()=>setViewingProfileStudent(p)}><div className="flex items-center gap-3"><div className={`w-3 h-3 rounded-full ${getStatusColor(st)}`}></div><span className="font-bold">{p.name}</span></div><div className="flex gap-2" onClick={e=>e.stopPropagation()}><button onClick={()=>toggleAttendance(p.id,'present')} className="p-2 border rounded-lg hover:bg-lime-100">✅</button><button onClick={()=>toggleAttendance(p.id,'absent')} className="p-2 border rounded-lg hover:bg-red-100">❌</button>{userRole==='admin' && <button onClick={()=>handleRemovePlayerFromGroup(activeGroup.id,p.id)} className="p-2 border rounded-lg text-red-500">🗑</button>}</div></div>})}</div>
                             </div>
                         ) : (
                             <>
                                 <HorizontalCalendar selectedDate={selectedDate} onSelectDate={setSelectedDate}/>
-                                {adminTab==='reports' ? <AdminReportsView groups={groups} students={registeredStudents}/> : 
-                                <div className="p-4 pb-24 space-y-4">
-                                    {adminTab==='schedule' && dailyGroups.map(g=><div key={g.id} onClick={()=>setActiveGroup(g)} className="glass-card p-5 rounded-3xl relative"><div className="absolute top-0 right-0 bg-emerald-100 px-3 py-1 rounded-bl-xl text-xs font-bold">{g.schedule?.find(s=>s.day===currentDayName)?.time}</div><h3 className="text-lg font-black">{g.name}</h3><div className="text-sm text-emerald-600 font-bold">{g.instructor}</div><div className="mt-2 text-xs text-gray-500">{g.players?.length||0} Oyuncu</div></div>)}
+                                {adminTab==='reports' ? <ReportsView/> : <div className="p-4 pb-24 space-y-4">
+                                    {adminTab==='schedule' && dailyGroups.map(g=><div key={g.id} onClick={()=>setActiveGroup(g)} className="glass-card p-5 rounded-3xl relative"><div className="absolute top-0 right-0 bg-emerald-100 px-3 py-1 rounded-bl-xl text-xs font-bold">{g.schedule?.find(s=>s.day===curDay)?.time}</div><h3 className="text-lg font-black">{g.name}</h3><div className="text-sm text-emerald-600 font-bold">{g.instructor}</div><div className="mt-2 text-xs text-gray-500">{g.players?.length||0} Oyuncu</div></div>)}
                                     {adminTab==='groups' && groups.map(g=><div key={g.id} className="glass-card p-4 rounded-2xl flex justify-between items-center"><span>{g.name}</span><div className="flex gap-2"><button onClick={(e)=>openEditGroupModal(g,e)} className="p-2 bg-blue-100 rounded">✏️</button><button onClick={(e)=>handleDeleteGroup(g.id,e)} className="p-2 bg-red-100 rounded">🗑</button></div></div>)}
                                     {adminTab==='coaches' && definedCoaches.map(c=><div key={c.id} className="glass-card p-4 rounded-2xl flex justify-between items-center"><span>{c.name}</span><button onClick={()=>handleDeleteCoach(c.id)} className="p-2 bg-red-100 rounded">🗑</button></div>)}
                                     {adminTab==='students' && registeredStudents.map(s=><div key={s.id} className="glass-card p-4 rounded-2xl flex justify-between items-center"><span>{s.name}</span><button onClick={()=>handleDeleteStudentFromRegistry(s.id)} className="p-2 bg-red-100 rounded">🗑</button></div>)}
@@ -519,34 +271,26 @@
                             </>
                         )}
                     </div>
+                    {/* MENUS & MODALS */}
                     {userRole==='admin' && !activeGroup && (
                         <>
-                            <div className="fixed bottom-24 right-4 flex flex-col gap-2">
-                                {adminTab==='groups' && <button onClick={()=>setIsModalOpen(true)} className="bg-lime-500 text-white p-4 rounded-full shadow-lg text-2xl">+</button>}
-                                {adminTab==='coaches' && <button onClick={()=>setIsCoachModalOpen(true)} className="bg-orange-500 text-white p-4 rounded-full shadow-lg text-2xl">+</button>}
-                                {adminTab==='students' && <button onClick={()=>setIsStudentModalOpen(true)} className="bg-emerald-600 text-white p-4 rounded-full shadow-lg text-2xl">+</button>}
-                            </div>
-                            <div className="floating-nav p-2 fixed bottom-4 left-4 right-4 flex justify-between shadow-xl z-20 pb-safe backdrop-blur-lg">
-                                <button onClick={()=>setAdminTab('schedule')} className={`p-2 flex-1 flex flex-col items-center ${adminTab==='schedule'?'text-emerald-700 font-bold':''}`}><Icon name="Calendar"/><span className="text-[10px]">Program</span></button>
-                                <button onClick={()=>setAdminTab('groups')} className={`p-2 flex-1 flex flex-col items-center ${adminTab==='groups'?'text-emerald-700 font-bold':''}`}><Icon name="Layers"/><span className="text-[10px]">Gruplar</span></button>
-                                <button onClick={()=>setAdminTab('students')} className={`p-2 flex-1 flex flex-col items-center ${adminTab==='students'?'text-emerald-700 font-bold':''}`}><Icon name="Users"/><span className="text-[10px]">Öğrenci</span></button>
-                                <button onClick={()=>setAdminTab('coaches')} className={`p-2 flex-1 flex flex-col items-center ${adminTab==='coaches'?'text-emerald-700 font-bold':''}`}><Icon name="UserSquare"/><span className="text-[10px]">Hoca</span></button>
-                                <button onClick={()=>setAdminTab('reports')} className={`p-2 flex-1 flex flex-col items-center ${adminTab==='reports'?'text-emerald-700 font-bold':''}`}><Icon name="ChartPie"/><span className="text-[10px]">Rapor</span></button>
-                            </div>
+                            <div className="fixed bottom-24 right-4 flex flex-col gap-2">{adminTab==='groups'&&<button onClick={()=>setIsModalOpen(true)} className="bg-lime-500 text-white p-4 rounded-full shadow-lg text-2xl">+</button>}{adminTab==='coaches'&&<button onClick={()=>setIsCoachModalOpen(true)} className="bg-orange-500 text-white p-4 rounded-full shadow-lg text-2xl">+</button>}{adminTab==='students'&&<button onClick={()=>setIsStudentModalOpen(true)} className="bg-emerald-600 text-white p-4 rounded-full shadow-lg text-2xl">+</button>}</div>
+                            <div className="floating-nav p-2 fixed bottom-4 left-4 right-4 flex justify-between shadow-xl z-20 pb-safe backdrop-blur-lg"><button onClick={()=>setAdminTab('schedule')} className={`p-2 flex-1 flex flex-col items-center ${adminTab==='schedule'?'text-emerald-700 font-bold':''}`}><Icon name="Calendar"/><span className="text-[10px]">Program</span></button><button onClick={()=>setAdminTab('groups')} className={`p-2 flex-1 flex flex-col items-center ${adminTab==='groups'?'text-emerald-700 font-bold':''}`}><Icon name="Layers"/><span className="text-[10px]">Gruplar</span></button><button onClick={()=>setAdminTab('students')} className={`p-2 flex-1 flex flex-col items-center ${adminTab==='students'?'text-emerald-700 font-bold':''}`}><Icon name="Users"/><span className="text-[10px]">Öğrenci</span></button><button onClick={()=>setAdminTab('coaches')} className={`p-2 flex-1 flex flex-col items-center ${adminTab==='coaches'?'text-emerald-700 font-bold':''}`}><Icon name="UserSquare"/><span className="text-[10px]">Hoca</span></button><button onClick={()=>setAdminTab('reports')} className={`p-2 flex-1 flex flex-col items-center ${adminTab==='reports'?'text-emerald-700 font-bold':''}`}><Icon name="ChartPie"/><span className="text-[10px]">Rapor</span></button></div>
                         </>
                     )}
-                    {userRole==='coach' && !activeGroup && (
-                        <div className="floating-nav p-2 fixed bottom-4 left-4 right-4 flex justify-around shadow-xl z-20 pb-safe backdrop-blur-lg">
-                             <button onClick={()=>setCoachTab('schedule')} className={`flex flex-col items-center p-3 rounded-2xl flex-1 ${coachTab==='schedule'?'text-emerald-700 font-bold':''}`}><Icon name="Calendar"/><span className="text-[10px]">Programım</span></button>
-                             <button onClick={()=>setCoachTab('students')} className={`flex flex-col items-center p-3 rounded-2xl flex-1 ${coachTab==='students'?'text-emerald-700 font-bold':''}`}><Icon name="Users"/><span className="text-[10px]">Öğrenciler</span></button>
-                        </div>
-                    )}
-                    {isSettingsOpen && <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"><div className="bg-white p-6 rounded-2xl w-80"><h3 className="font-bold mb-4">Ayarlar</h3><button className="w-full bg-gray-200 p-3 rounded-xl" onClick={()=>setIsSettingsOpen(false)}>Kapat</button></div></div>}
-                    {isModalOpen && <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50"><div className="bg-white p-6 rounded-3xl w-80"><h3 className="font-bold mb-4">Grup Oluştur</h3><input className="w-full border p-2 mb-2 rounded" placeholder="Grup Adı" value={newGroupName} onChange={e=>setNewGroupName(e.target.value)}/><select className="w-full border p-2 mb-2 rounded" value={newCoachName} onChange={e=>setNewCoachName(e.target.value)}><option value="">Hoca Seç</option>{definedCoaches.map(c=><option key={c.id} value={c.name}>{c.name}</option>)}</select><div className="flex gap-2 mb-4"><button onClick={addScheduleSlot} className="bg-blue-100 p-2 rounded text-xs">+ Saat Ekle</button></div><div className="mb-4 text-xs">{tempSchedule.map((s,i)=><div key={i}>{s.day} {s.time}</div>)}</div><button onClick={handleSaveGroup} className="w-full bg-emerald-600 text-white p-3 rounded-xl">Kaydet</button><button onClick={()=>setIsModalOpen(false)} className="w-full mt-2 text-gray-500">İptal</button></div></div>}
-                    {isCoachModalOpen && <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50"><div className="bg-white p-6 rounded-3xl w-80"><h3 className="font-bold mb-4">Hoca Ekle</h3><input className="w-full border p-2 mb-2 rounded" placeholder="Ad" value={newInstName} onChange={e=>setNewInstName(e.target.value)}/><input className="w-full border p-2 mb-4 rounded" placeholder="Email" value={newInstEmail} onChange={e=>setNewInstEmail(e.target.value)}/><button onClick={handleAddCoach} className="w-full bg-orange-500 text-white p-3 rounded-xl">Ekle</button><button onClick={()=>setIsCoachModalOpen(false)} className="w-full mt-2 text-gray-500">İptal</button></div></div>}
-                    {isStudentModalOpen && <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50"><div className="bg-white p-6 rounded-3xl w-80"><h3 className="font-bold mb-4">Öğrenci Ekle</h3><input className="w-full border p-2 mb-2 rounded" placeholder="Ad" value={newStudentName} onChange={e=>setNewStudentName(e.target.value)}/><button onClick={handleAddStudentGlobal} className="w-full bg-emerald-600 text-white p-3 rounded-xl">Ekle</button><button onClick={()=>setIsStudentModalOpen(false)} className="w-full mt-2 text-gray-500">İptal</button></div></div>}
-                    <ConfirmationDialog isOpen={confirmModal.isOpen} message={confirmModal.message} onConfirm={executeConfirm} onCancel={closeConfirmModal} />
-                    <LoginComp />
+                    {userRole==='coach' && !activeGroup && <div className="floating-nav p-2 fixed bottom-4 left-4 right-4 flex justify-around shadow-xl z-20 pb-safe backdrop-blur-lg"><button onClick={()=>setCoachTab('schedule')} className={`flex flex-col items-center p-3 rounded-2xl flex-1 ${coachTab==='schedule'?'text-emerald-700 font-bold':''}`}><Icon name="Calendar"/><span className="text-[10px]">Programım</span></button><button onClick={()=>setCoachTab('students')} className={`flex flex-col items-center p-3 rounded-2xl flex-1 ${coachTab==='students'?'text-emerald-700 font-bold':''}`}><Icon name="Users"/><span className="text-[10px]">Öğrenciler</span></button></div>}
+                    
+                    {/* SETTINGS MODAL */}
+                    {isSettingsOpen && <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"><div className="glass-modal rounded-[32px] p-6 w-80"><h3 className="font-bold mb-4">Ayarlar</h3><div className="mb-4"><h4 className="text-sm font-bold mb-2">Şifre Değiştir</h4><input className="w-full border p-2 rounded mb-2" placeholder="Mevcut" value={changePassData.current} onChange={e=>setChangePassData({...changePassData,current:e.target.value})}/><input className="w-full border p-2 rounded mb-2" placeholder="Yeni" value={changePassData.new} onChange={e=>setChangePassData({...changePassData,new:e.target.value})}/><input className="w-full border p-2 rounded" placeholder="Tekrar" value={changePassData.confirm} onChange={e=>setChangePassData({...changePassData,confirm:e.target.value})}/><button onClick={handleChangeAdminPassword} className="w-full bg-blue-500 text-white p-2 rounded mt-2">Güncelle</button></div><button className="w-full bg-gray-200 p-3 rounded-xl" onClick={()=>setIsSettingsOpen(false)}>Kapat</button></div></div>}
+                    
+                    {/* ADD GROUP MODAL */}
+                    {isModalOpen && <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50"><div className="glass-modal rounded-[32px] p-6 w-80"><h3 className="font-bold mb-4">Grup Oluştur</h3><input className="w-full border p-2 mb-2 rounded" placeholder="Grup Adı" value={newGroupName} onChange={e=>setNewGroupName(e.target.value)}/><select className="w-full border p-2 mb-2 rounded" value={newCoachName} onChange={e=>setNewCoachName(e.target.value)}><option value="">Hoca Seç</option>{definedCoaches.map(c=><option key={c.id} value={c.name}>{c.name}</option>)}</select><div className="flex gap-2 mb-4"><select className="border p-1 rounded" value={tempDay} onChange={e=>setTempDay(e.target.value)}><option>Pazartesi</option><option>Salı</option><option>Çarşamba</option><option>Perşembe</option><option>Cuma</option><option>Cumartesi</option><option>Pazar</option></select><select className="border p-1 rounded" value={tempTime} onChange={e=>setTempTime(e.target.value)}>{validHours.map(h=><option key={h}>{h}</option>)}</select><button onClick={()=>setTempSchedule([...tempSchedule,{day:tempDay,time:tempTime}])} className="bg-blue-100 p-1 rounded">+</button></div><div className="mb-4 text-xs">{tempSchedule.map((s,i)=><div key={i}>{s.day} {s.time}</div>)}</div><button onClick={handleSaveGroup} className="w-full bg-emerald-600 text-white p-3 rounded-xl">Kaydet</button><button onClick={()=>setIsModalOpen(false)} className="w-full mt-2 text-gray-500">İptal</button></div></div>}
+                    
+                    {/* OTHER MODALS */}
+                    {isCoachModalOpen && <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50"><div className="glass-modal rounded-[32px] p-6 w-80"><h3 className="font-bold mb-4">Hoca Ekle</h3><input className="w-full border p-2 mb-2 rounded" placeholder="Ad" value={newInstName} onChange={e=>setNewInstName(e.target.value)}/><input className="w-full border p-2 mb-4 rounded" placeholder="Email" value={newInstEmail} onChange={e=>setNewInstEmail(e.target.value)}/><button onClick={handleAddCoach} className="w-full bg-orange-500 text-white p-3 rounded-xl">Ekle</button><button onClick={()=>setIsCoachModalOpen(false)} className="w-full mt-2 text-gray-500">İptal</button></div></div>}
+                    {isStudentModalOpen && <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50"><div className="glass-modal rounded-[32px] p-6 w-80"><h3 className="font-bold mb-4">Öğrenci Ekle</h3><div className="flex justify-center mb-4"><div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center relative overflow-hidden"><input type="file" onChange={handlePhotoChange} className="absolute inset-0 opacity-0"/><span className="text-xs text-gray-400">Foto</span>{newStudentPhoto&&<img src={newStudentPhoto} className="absolute inset-0 w-full h-full object-cover"/>}</div></div><input className="w-full border p-2 mb-2 rounded" placeholder="Ad" value={newStudentName} onChange={e=>setNewStudentName(e.target.value)}/><input className="w-full border p-2 mb-2 rounded" placeholder="Yaş" type="number" value={newStudentAge} onChange={e=>setNewStudentAge(e.target.value)}/><input className="w-full border p-2 mb-4 rounded" placeholder="Tel" type="tel" value={newStudentPhone} onChange={e=>setNewStudentPhone(e.target.value)}/><select className="w-full border p-2 mb-4 rounded" value={selectedGroupIdForStudent} onChange={e=>setSelectedGroupIdForStudent(e.target.value)}><option value="">Grup Seç (Opsiyonel)</option>{groups.map(g=><option key={g.id} value={g.id}>{g.name}</option>)}</select><button onClick={handleAddStudentGlobal} className="w-full bg-emerald-600 text-white p-3 rounded-xl">Ekle</button><button onClick={()=>setIsStudentModalOpen(false)} className="w-full mt-2 text-gray-500">İptal</button></div></div>}
+                    
+                    <ConfirmationDialog isOpen={confirmModal.isOpen} message={confirmModal.message} onConfirm={executeConfirm} onCancel={() => setConfirmModal({isOpen:false, message:'', onConfirm:null})} />
                     {viewingProfileStudent && <StudentProfileModal student={viewingProfileStudent} groups={groups} onClose={()=>setViewingProfileStudent(null)}/>}
                 </div>
             );
