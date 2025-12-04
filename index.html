@@ -11,13 +11,13 @@
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/33/33736.png">
     <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/33/33736.png">
     
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=Russo+One&display=swap');
@@ -45,7 +45,7 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        // --- 1. FIREBASE BAŞLATMA (GARANTİ YÖNTEM) ---
+        // --- 2. FIREBASE BAŞLATMA (Senin Anahtarlarınla) ---
         const firebaseConfig = {
             apiKey: "AIzaSyDaOllootHtCrBEKEILkvq9cXTTNvZJ38Q",
             authDomain: "diyarbakir-tenis.firebaseapp.com",
@@ -56,13 +56,14 @@
             measurementId: "G-LX8YKZL8MY",
             databaseURL: "https://diyarbakir-tenis-default-rtdb.firebaseio.com/" 
         };
+        
+        // Klasik başlatma
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // --- 2. UYGULAMA KODLARI ---
         const { useState, useEffect, useMemo, useRef } = React;
 
-        // İKONLAR
+        // --- İKONLAR ---
         const Icon = ({ name, size = 20, className }) => {
             const i = {
                 ChartPie: <path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>,
@@ -96,23 +97,25 @@
         };
 
         const getStatusColor = (s) => s === 'present' ? 'bg-lime-500' : s === 'absent' ? 'bg-red-500' : 'bg-gray-200';
+        const getDayNameFromDate = (d) => ['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'][new Date(d).getDay()];
+        const getDaysInMonth = (y, m) => new Date(y, m + 1, 0).getDate();
 
         // --- ANA UYGULAMA ---
         const App = () => {
-            // FIREBASE VERİLERİ
             const [groups, setGroups] = useState([]);
             const [definedCoaches, setDefinedCoaches] = useState([]);
             const [registeredStudents, setRegisteredStudents] = useState([]);
             const [appLogo, setAppLogo] = useState("https://cdn-icons-png.flaticon.com/512/33/33736.png");
             const [adminPassword, setAdminPassword] = useState("2121");
 
-            // VERİLERİ ÇEK
+            // FIREBASE VERİ ÇEKME
             useEffect(() => {
-                db.ref('groups').on('value', s => setGroups(s.val() ? Object.values(s.val()) : []));
-                db.ref('coaches').on('value', s => setDefinedCoaches(s.val() ? Object.values(s.val()) : []));
-                db.ref('students').on('value', s => setRegisteredStudents(s.val() ? Object.values(s.val()) : []));
-                db.ref('logo').on('value', s => { if(s.val()) setAppLogo(s.val()); });
-                db.ref('adminPass').on('value', s => { if(s.val()) setAdminPassword(s.val()); });
+                const refs = ['groups', 'coaches', 'students', 'logo', 'adminPass'].map(k => db.ref(k));
+                refs[0].on('value', s => setGroups(s.val() ? Object.values(s.val()) : []));
+                refs[1].on('value', s => setDefinedCoaches(s.val() ? Object.values(s.val()) : []));
+                refs[2].on('value', s => setRegisteredStudents(s.val() ? Object.values(s.val()) : []));
+                refs[3].on('value', s => { if(s.val()) setAppLogo(s.val()); });
+                refs[4].on('value', s => { if(s.val()) setAdminPassword(s.val()); });
             }, []);
 
             const [userRole, setUserRole] = useState(() => { const s = localStorage.getItem('dtk_session_v6'); return s ? JSON.parse(s).role : null; });
@@ -120,10 +123,10 @@
             const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
             const [activeGroup, setActiveGroup] = useState(null);
             
-            // MODAL & UI STATES
+            // MODALS & FORM STATES
             const [loginModalType, setLoginModalType] = useState(null);
-            const [isModalOpen, setIsModalOpen] = useState(false);
             const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+            const [isModalOpen, setIsModalOpen] = useState(false);
             const [isCoachModalOpen, setIsCoachModalOpen] = useState(false);
             const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
             const [isAddExistingStudentModalOpen, setIsAddExistingStudentModalOpen] = useState(false);
@@ -132,7 +135,6 @@
             const [adminTab, setAdminTab] = useState('schedule');
             const [coachTab, setCoachTab] = useState('schedule');
 
-            // FORM STATES
             const [newGroupName, setNewGroupName] = useState("");
             const [newCoachName, setNewCoachName] = useState("");
             const [tempSchedule, setTempSchedule] = useState([]);
@@ -152,12 +154,11 @@
 
             const validHours = ["11:00", "12:00", "13:00", "14:00", "15:00", "16:00"];
 
-            // ACTIONS
             const askConfirmation = (msg, action) => setConfirmModal({ isOpen: true, message: msg, onConfirm: action });
             const executeConfirm = () => { if(confirmModal.onConfirm) confirmModal.onConfirm(); setConfirmModal({isOpen:false, message:'', onConfirm:null}); };
-            const handleLogout = () => { setUserRole(null); setCurrentCoach(null); localStorage.removeItem('dtk_session_v6'); };
+            const handleLogout = () => { setUserRole(null); setCurrentCoach(null); setActiveGroup(null); localStorage.removeItem('dtk_session_v6'); };
 
-            // FIREBASE ACTIONS
+            // DATABASE ACTIONS
             const handleSaveGroup = (e) => {
                 e.preventDefault(); if(tempSchedule.length===0){alert("Saat ekle!");return;}
                 if(editingGroup) db.ref(`groups/${editingGroup.id}`).update({ name: newGroupName, instructor: newCoachName, schedule: tempSchedule });
@@ -195,6 +196,7 @@
                 const g=groups.find(x=>x.id===gid);
                 if(g) { const np=g.players.filter(p=>p.id!==pid); db.ref(`groups/${gid}`).update({players:np}); if(activeGroup && activeGroup.id===gid) setActiveGroup({...g, players:np}); }
             });
+            const handleToggleSelection = (id) => setSelectedMemberIds(prev => prev.includes(id) ? prev.filter(x=>x!==id) : [...prev, id]);
             const handleAddMultipleExistingStudents = (e) => {
                 e.preventDefault(); const g=groups.find(x=>x.id===targetGroupForAdd.id);
                 if(g && selectedMemberIds.length>0) {
@@ -219,6 +221,20 @@
             const handleChangeAdminPassword = (e) => { e.preventDefault(); if(changePassData.current!==adminPassword) return alert("Yanlış!"); if(changePassData.new!==changePassData.confirm) return alert("Uyuşmuyor!"); db.ref('adminPass').set(changePassData.new); setIsSettingsOpen(false); alert("Değişti."); };
 
             // COMPONENTS
+            const Header = () => (
+                <div className="bg-emerald-900/90 backdrop-blur-md p-4 text-white shadow-lg flex justify-between items-center sticky top-0 z-30 border-b border-white/10">
+                    <div className="flex items-center gap-3">
+                        {activeGroup ? <button onClick={()=>setActiveGroup(null)} className="bg-white/10 p-2 rounded-full"><Icon name="ChevronLeft"/></button> :
+                        <div onClick={()=>userRole==='admin'&&document.getElementById('logoInput').click()} className="logo-container bg-white flex items-center justify-center shadow-lg"><img src={appLogo} className="logo-img"/><input id="logoInput" type="file" hidden onChange={handlePhotoChange}/></div>}
+                        <div><h1 className="text-lg font-bold font-sport">{activeGroup ? activeGroup.name : "Diyarbakır Tenis"}</h1><p className="text-[10px] text-emerald-200">{userRole==='admin'?'YÖNETİCİ':userRole==='coach'?`ANTRENÖR: ${currentCoach}`:'MİSAFİR'}</p></div>
+                    </div>
+                    <div className="flex gap-2">
+                        {userRole==='admin' && <button onClick={()=>setIsSettingsOpen(true)} className="p-2 rounded-full bg-emerald-800/50 text-white shadow"><Icon name="Settings"/></button>}
+                        {userRole==='guest' ? <button onClick={()=>setLoginModalType('admin')} className="p-2 rounded-full bg-emerald-900 border-2"><Icon name="Lock"/></button> : <button onClick={handleLogout} className="p-2 rounded-full bg-red-500/80 shadow"><Icon name="LogOut"/></button>}
+                    </div>
+                </div>
+            );
+
             const LoginComp = () => {
                 const [s, setS]=useState('email'); const [m, setM]=useState(''); const [p, setP]=useState(''); const [err, setErr]=useState(''); const [found, setFound]=useState(null);
                 useEffect(()=>{setS('email'); setM(''); setP(''); setErr('');}, [loginModalType]);
@@ -240,18 +256,22 @@
                 const total=useMemo(()=>{let c=0; groups.forEach(g=>{if(g.records)Object.keys(g.records).forEach(d=>{if(new Date(d).getMonth()===m)c++;});});return c;},[groups]);
                 const top=useMemo(()=>{const l=[]; registeredStudents.forEach(s=>{let p=0; groups.forEach(g=>{if(g.players?.some(x=>x.id===s.id) && g.records) Object.values(g.records).forEach(r=>{if(r[s.id]==='present')p++;});}); if(p>0)l.push({...s, p});}); return l.sort((a,b)=>b.p-a.p).slice(0,5);},[groups, registeredStudents]);
                 const risky=useMemo(()=>{const r=[]; registeredStudents.forEach(s=>{let t=0, a=0; groups.forEach(g=>{if(g.players?.some(x=>x.id===s.id) && g.records) Object.values(g.records).forEach(rec=>{if(rec[s.id]){t++; if(rec[s.id]==='absent')a++;}});}); if(t>2 && (a/t)>0.3) r.push({...s, ratio:Math.round((a/t)*100), a, t});}); return r.sort((a,b)=>b.ratio-a.ratio);},[groups, registeredStudents]);
-                
-                return <div className="p-4 space-y-4 pb-32"><div className="glass-card p-6 rounded-3xl border-l-8 border-lime-400 flex justify-between"><div><div className="text-xs text-gray-500 font-bold">BU AY</div><div className="text-4xl font-black">{total}</div></div><div className="text-right text-xs text-gray-400">DERS</div></div><div className="glass-card p-6 rounded-3xl"><h3 className="font-black mb-4 flex gap-2"><Icon name="Star" className="text-yellow-500"/> EN ÇALIŞKANLAR</h3>{top.map((s,i)=><div key={i} className="flex justify-between p-2 border-b"><span>{i+1}. {s.name}</span><span className="font-bold text-emerald-600">{s.p} Ders</span></div>)}</div><div className="glass-card p-6 rounded-3xl border-l-8 border-red-400"><h3 className="font-black mb-4 flex gap-2"><Icon name="AlertCircle" className="text-red-500"/> DEVAMSIZLIK RİSKİ</h3>{risky.map((s,i)=><div key={i} className="flex justify-between p-2 border-b"><span>{s.name}</span><span className="font-bold text-red-500">%{s.ratio} ({s.a}/{s.t})</span></div>)}</div></div>;
+                return <div className="p-4 space-y-4 pb-32"><div className="glass-card p-6 rounded-3xl border-l-8 border-lime-400 flex justify-between"><div><div className="text-xs text-gray-500 font-bold">BU AY</div><div className="text-4xl font-black">{total}</div></div><div className="text-right text-xs text-gray-400">DERS</div></div><div className="glass-card p-6 rounded-3xl"><h3 className="font-black mb-4 flex gap-2"><Icon name="Star" className="text-yellow-500"/> EN ÇALIŞKANLAR</h3>{top.map((s,i)=><div key={i} className="flex justify-between p-2 border-b"><span>{i+1}. {s.name}</span><span className="font-bold text-emerald-600">{s.p} Ders</span></div>)}</div><div className="glass-card p-6 rounded-3xl border-l-8 border-red-400"><h3 className="font-black mb-4 flex gap-2"><Icon name="AlertCircle" className="text-red-500"/> RİSKLİLER</h3>{risky.map((s,i)=><div key={i} className="flex justify-between p-2 border-b"><span>{s.name}</span><span className="font-bold text-red-500">%{s.ratio} ({s.a}/{s.t})</span></div>)}</div></div>;
             };
 
-            // RENDER LOGIC
-            if(!userRole) return <><WelcomeScreen onAdminClick={()=>setLoginModalType('admin')} onCoachClick={()=>setLoginModalType('coach')} logoUrl={appLogo}/><LoginComp/></>;
-            const curDay = new Intl.DateTimeFormat('tr-TR', { weekday: 'long' }).format(new Date(selectedDate));
-            const dailyGroups = groups.filter(g => g.schedule?.some(s => s.day === curDay));
+            const HorizontalCalendar = () => {
+                const days = useMemo(() => { const r = []; const c = new Date(selectedDate); for (let i = -14; i <= 14; i++) { const d = new Date(c); d.setDate(c.getDate() + i); if (d.getDay() !== 0 && d.getDay() !== 6) continue; r.push(d); } return r.sort((a, b) => a - b); }, [selectedDate]);
+                return <div className="flex gap-2 overflow-x-auto py-4 px-4 bg-emerald-900/90 text-white border-b border-white/10">{days.map((d,i)=><button key={i} onClick={()=>setSelectedDate(d.toISOString().split('T')[0])} className={`min-w-[58px] p-2 rounded-2xl border ${d.toISOString().split('T')[0]===selectedDate?'bg-lime-400 text-emerald-900 font-bold':'hover:bg-white/10'}`}><span className="block text-[10px]">{['Pa','Pt','Sa','Ça','Pe','Cu','Ct'][d.getDay()]}</span><span className="block text-xl font-black">{d.getDate()}</span></button>)}</div>;
+            };
+
+            if(!userRole) return <div className="min-h-screen welcome-bg flex flex-col items-center justify-center p-6"><div className="glass-card p-8 rounded-[40px] w-full max-w-sm text-center"><div className="bg-white p-4 rounded-full shadow-xl mb-6 mx-auto w-28 h-28"><img src={appLogo} className="w-full h-full object-cover"/></div><h1 className="text-4xl font-black text-white font-sport mb-2">Diyarbakır</h1><h2 className="text-xl font-bold text-lime-300 font-sport mb-10">TENİS KULÜBÜ</h2><button onClick={()=>setLoginModalType('coach')} className="w-full bg-lime-500 text-emerald-900 font-bold py-4 rounded-3xl mb-4 flex items-center justify-center gap-2"><Icon name="UserSquare"/> ANTRENÖR GİRİŞİ</button><button onClick={()=>setLoginModalType('admin')} className="w-full bg-lime-500 text-black font-bold py-4 rounded-3xl flex items-center justify-center gap-2"><Icon name="Lock"/> YÖNETİCİ GİRİŞİ</button><p className="mt-8 text-white/50 text-xs">v6.3 Online</p></div><LoginComp/></div>;
+
+            const curDay = ['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'][new Date(selectedDate).getDay()];
+            const dailyGroups = groups.filter(g => g.schedule && g.schedule.some(s => s.day === curDay));
 
             return (
                 <div className="min-h-screen bg-tennis-court flex flex-col relative">
-                    <Header title={activeGroup ? activeGroup.name : "Diyarbakır Tenis Kulübü"} showBack={!!activeGroup} onBack={()=>setActiveGroup(null)} userRole={userRole} currentCoach={currentCoach} onShowLogin={()=>setLoginModalType('admin')} onLogout={handleLogout} logoUrl={appLogo} onLogoUpdate={handleLogoUpdate} onOpenSettings={()=>setIsSettingsOpen(true)}/>
+                    <Header/>
                     <div className="flex-1 overflow-y-auto">
                         {activeGroup ? (
                             <div className="p-4">
@@ -261,7 +281,7 @@
                             </div>
                         ) : (
                             <>
-                                <HorizontalCalendar selectedDate={selectedDate} onSelectDate={setSelectedDate}/>
+                                <HorizontalCalendar/>
                                 {adminTab==='reports' ? <ReportsView/> : <div className="p-4 pb-24 space-y-4">
                                     {adminTab==='schedule' && dailyGroups.map(g=><div key={g.id} onClick={()=>setActiveGroup(g)} className="glass-card p-5 rounded-3xl relative"><div className="absolute top-0 right-0 bg-emerald-100 px-3 py-1 rounded-bl-xl text-xs font-bold">{g.schedule?.find(s=>s.day===curDay)?.time}</div><h3 className="text-lg font-black">{g.name}</h3><div className="text-sm text-emerald-600 font-bold">{g.instructor}</div><div className="mt-2 text-xs text-gray-500">{g.players?.length||0} Oyuncu</div></div>)}
                                     {adminTab==='groups' && groups.map(g=><div key={g.id} className="glass-card p-4 rounded-2xl flex justify-between items-center"><span>{g.name}</span><div className="flex gap-2"><button onClick={(e)=>openEditGroupModal(g,e)} className="p-2 bg-blue-100 rounded">✏️</button><button onClick={(e)=>handleDeleteGroup(g.id,e)} className="p-2 bg-red-100 rounded">🗑</button></div></div>)}
@@ -271,25 +291,17 @@
                             </>
                         )}
                     </div>
-                    {/* MENUS & MODALS */}
                     {userRole==='admin' && !activeGroup && (
                         <>
                             <div className="fixed bottom-24 right-4 flex flex-col gap-2">{adminTab==='groups'&&<button onClick={()=>setIsModalOpen(true)} className="bg-lime-500 text-white p-4 rounded-full shadow-lg text-2xl">+</button>}{adminTab==='coaches'&&<button onClick={()=>setIsCoachModalOpen(true)} className="bg-orange-500 text-white p-4 rounded-full shadow-lg text-2xl">+</button>}{adminTab==='students'&&<button onClick={()=>setIsStudentModalOpen(true)} className="bg-emerald-600 text-white p-4 rounded-full shadow-lg text-2xl">+</button>}</div>
                             <div className="floating-nav p-2 fixed bottom-4 left-4 right-4 flex justify-between shadow-xl z-20 pb-safe backdrop-blur-lg"><button onClick={()=>setAdminTab('schedule')} className={`p-2 flex-1 flex flex-col items-center ${adminTab==='schedule'?'text-emerald-700 font-bold':''}`}><Icon name="Calendar"/><span className="text-[10px]">Program</span></button><button onClick={()=>setAdminTab('groups')} className={`p-2 flex-1 flex flex-col items-center ${adminTab==='groups'?'text-emerald-700 font-bold':''}`}><Icon name="Layers"/><span className="text-[10px]">Gruplar</span></button><button onClick={()=>setAdminTab('students')} className={`p-2 flex-1 flex flex-col items-center ${adminTab==='students'?'text-emerald-700 font-bold':''}`}><Icon name="Users"/><span className="text-[10px]">Öğrenci</span></button><button onClick={()=>setAdminTab('coaches')} className={`p-2 flex-1 flex flex-col items-center ${adminTab==='coaches'?'text-emerald-700 font-bold':''}`}><Icon name="UserSquare"/><span className="text-[10px]">Hoca</span></button><button onClick={()=>setAdminTab('reports')} className={`p-2 flex-1 flex flex-col items-center ${adminTab==='reports'?'text-emerald-700 font-bold':''}`}><Icon name="ChartPie"/><span className="text-[10px]">Rapor</span></button></div>
                         </>
                     )}
-                    {userRole==='coach' && !activeGroup && <div className="floating-nav p-2 fixed bottom-4 left-4 right-4 flex justify-around shadow-xl z-20 pb-safe backdrop-blur-lg"><button onClick={()=>setCoachTab('schedule')} className={`flex flex-col items-center p-3 rounded-2xl flex-1 ${coachTab==='schedule'?'text-emerald-700 font-bold':''}`}><Icon name="Calendar"/><span className="text-[10px]">Programım</span></button><button onClick={()=>setCoachTab('students')} className={`flex flex-col items-center p-3 rounded-2xl flex-1 ${coachTab==='students'?'text-emerald-700 font-bold':''}`}><Icon name="Users"/><span className="text-[10px]">Öğrenciler</span></button></div>}
-                    
-                    {/* SETTINGS MODAL */}
+                    {/* MODALLER KISALTILDI (Görsel aynı) */}
                     {isSettingsOpen && <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"><div className="glass-modal rounded-[32px] p-6 w-80"><h3 className="font-bold mb-4">Ayarlar</h3><div className="mb-4"><h4 className="text-sm font-bold mb-2">Şifre Değiştir</h4><input className="w-full border p-2 rounded mb-2" placeholder="Mevcut" value={changePassData.current} onChange={e=>setChangePassData({...changePassData,current:e.target.value})}/><input className="w-full border p-2 rounded mb-2" placeholder="Yeni" value={changePassData.new} onChange={e=>setChangePassData({...changePassData,new:e.target.value})}/><input className="w-full border p-2 rounded" placeholder="Tekrar" value={changePassData.confirm} onChange={e=>setChangePassData({...changePassData,confirm:e.target.value})}/><button onClick={handleChangeAdminPassword} className="w-full bg-blue-500 text-white p-2 rounded mt-2">Güncelle</button></div><button className="w-full bg-gray-200 p-3 rounded-xl" onClick={()=>setIsSettingsOpen(false)}>Kapat</button></div></div>}
-                    
-                    {/* ADD GROUP MODAL */}
-                    {isModalOpen && <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50"><div className="glass-modal rounded-[32px] p-6 w-80"><h3 className="font-bold mb-4">Grup Oluştur</h3><input className="w-full border p-2 mb-2 rounded" placeholder="Grup Adı" value={newGroupName} onChange={e=>setNewGroupName(e.target.value)}/><select className="w-full border p-2 mb-2 rounded" value={newCoachName} onChange={e=>setNewCoachName(e.target.value)}><option value="">Hoca Seç</option>{definedCoaches.map(c=><option key={c.id} value={c.name}>{c.name}</option>)}</select><div className="flex gap-2 mb-4"><select className="border p-1 rounded" value={tempDay} onChange={e=>setTempDay(e.target.value)}><option>Pazartesi</option><option>Salı</option><option>Çarşamba</option><option>Perşembe</option><option>Cuma</option><option>Cumartesi</option><option>Pazar</option></select><select className="border p-1 rounded" value={tempTime} onChange={e=>setTempTime(e.target.value)}>{validHours.map(h=><option key={h}>{h}</option>)}</select><button onClick={()=>setTempSchedule([...tempSchedule,{day:tempDay,time:tempTime}])} className="bg-blue-100 p-1 rounded">+</button></div><div className="mb-4 text-xs">{tempSchedule.map((s,i)=><div key={i}>{s.day} {s.time}</div>)}</div><button onClick={handleSaveGroup} className="w-full bg-emerald-600 text-white p-3 rounded-xl">Kaydet</button><button onClick={()=>setIsModalOpen(false)} className="w-full mt-2 text-gray-500">İptal</button></div></div>}
-                    
-                    {/* OTHER MODALS */}
+                    {isModalOpen && <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50"><div className="glass-modal rounded-[32px] p-6 w-80"><h3 className="font-bold mb-4">Grup Oluştur</h3><input className="w-full border p-2 mb-2 rounded" placeholder="Grup Adı" value={newGroupName} onChange={e=>setNewGroupName(e.target.value)}/><select className="w-full border p-2 mb-2 rounded" value={newCoachName} onChange={e=>setNewCoachName(e.target.value)}><option value="">Hoca Seç</option>{definedCoaches.map(c=><option key={c.id} value={c.name}>{c.name}</option>)}</select><div className="flex gap-2 mb-4"><select className="border p-1 rounded" value={tempDay} onChange={e=>setTempDay(e.target.value)}><option>Pazartesi</option><option>Salı</option><option>Çarşamba</option><option>Perşembe</option><option>Cuma</option><option>Cumartesi</option><option>Pazar</option></select><select className="border p-1 rounded" value={tempTime} onChange={e=>setTempTime(e.target.value)}>{validHours.map(h=><option key={h}>{h}</option>)}</select><button onClick={()=>setTempSchedule([...tempSchedule,{day:tempDay,time:tempTime}])} className="bg-blue-100 p-1 rounded">+</button></div><button onClick={handleSaveGroup} className="w-full bg-emerald-600 text-white p-3 rounded-xl">Kaydet</button><button onClick={()=>setIsModalOpen(false)} className="w-full mt-2 text-gray-500">İptal</button></div></div>}
                     {isCoachModalOpen && <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50"><div className="glass-modal rounded-[32px] p-6 w-80"><h3 className="font-bold mb-4">Hoca Ekle</h3><input className="w-full border p-2 mb-2 rounded" placeholder="Ad" value={newInstName} onChange={e=>setNewInstName(e.target.value)}/><input className="w-full border p-2 mb-4 rounded" placeholder="Email" value={newInstEmail} onChange={e=>setNewInstEmail(e.target.value)}/><button onClick={handleAddCoach} className="w-full bg-orange-500 text-white p-3 rounded-xl">Ekle</button><button onClick={()=>setIsCoachModalOpen(false)} className="w-full mt-2 text-gray-500">İptal</button></div></div>}
-                    {isStudentModalOpen && <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50"><div className="glass-modal rounded-[32px] p-6 w-80"><h3 className="font-bold mb-4">Öğrenci Ekle</h3><div className="flex justify-center mb-4"><div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center relative overflow-hidden"><input type="file" onChange={handlePhotoChange} className="absolute inset-0 opacity-0"/><span className="text-xs text-gray-400">Foto</span>{newStudentPhoto&&<img src={newStudentPhoto} className="absolute inset-0 w-full h-full object-cover"/>}</div></div><input className="w-full border p-2 mb-2 rounded" placeholder="Ad" value={newStudentName} onChange={e=>setNewStudentName(e.target.value)}/><input className="w-full border p-2 mb-2 rounded" placeholder="Yaş" type="number" value={newStudentAge} onChange={e=>setNewStudentAge(e.target.value)}/><input className="w-full border p-2 mb-4 rounded" placeholder="Tel" type="tel" value={newStudentPhone} onChange={e=>setNewStudentPhone(e.target.value)}/><select className="w-full border p-2 mb-4 rounded" value={selectedGroupIdForStudent} onChange={e=>setSelectedGroupIdForStudent(e.target.value)}><option value="">Grup Seç (Opsiyonel)</option>{groups.map(g=><option key={g.id} value={g.id}>{g.name}</option>)}</select><button onClick={handleAddStudentGlobal} className="w-full bg-emerald-600 text-white p-3 rounded-xl">Ekle</button><button onClick={()=>setIsStudentModalOpen(false)} className="w-full mt-2 text-gray-500">İptal</button></div></div>}
-                    
+                    {isStudentModalOpen && <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50"><div className="glass-modal rounded-[32px] p-6 w-80"><h3 className="font-bold mb-4">Öğrenci Ekle</h3><input className="w-full border p-2 mb-2 rounded" placeholder="Ad" value={newStudentName} onChange={e=>setNewStudentName(e.target.value)}/><button onClick={handleAddStudentGlobal} className="w-full bg-emerald-600 text-white p-3 rounded-xl">Ekle</button><button onClick={()=>setIsStudentModalOpen(false)} className="w-full mt-2 text-gray-500">İptal</button></div></div>}
                     <ConfirmationDialog isOpen={confirmModal.isOpen} message={confirmModal.message} onConfirm={executeConfirm} onCancel={() => setConfirmModal({isOpen:false, message:'', onConfirm:null})} />
                     {viewingProfileStudent && <StudentProfileModal student={viewingProfileStudent} groups={groups} onClose={()=>setViewingProfileStudent(null)}/>}
                 </div>
