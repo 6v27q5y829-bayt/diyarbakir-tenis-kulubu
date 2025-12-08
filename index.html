@@ -895,10 +895,9 @@
                 </div>
             );
         };
-<body>
-    <div id="root"></div>
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
 
-    <script type="module" src="firebase.js"></script>
-    <script type="module" src="app.js"></script>
+    </script>
 </body>
 </html>
