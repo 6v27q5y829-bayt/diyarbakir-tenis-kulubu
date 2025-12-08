@@ -614,7 +614,7 @@
                             <div key={hour} className="flex border-b border-gray-100/30 h-28 relative">
                                 <div className="w-20 flex-shrink-0 p-2 border-r border-gray-100/50 bg-gray-50/80 flex items-center justify-center text-sm font-bold text-gray-500 sticky left-0 z-10 shadow-sm backdrop-blur-md">{hour}</div>
                                 {coaches.map(inst => {
-                                    const group = dailyGroups.find(g => g.instructor === inst.name && g.schedule.some(s => s.time === hour && s.day === getDayNameFromDate(selectedDate)));
+                                    const group = dailyGroups.find(g => g.instructor === inst.name && g.schedule&& g.schedule.some(s => s.time === hour && s.day === getDayNameFromDate(selectedDate)));
                                     if (group) {
                                         const { taken, presentCount } = getAttendanceInfo(group, selectedDate);
                                         const bgClass = taken ? "bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/20" : "bg-blue-500/5 border-blue-500/20 hover:bg-blue-500/10";
