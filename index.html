@@ -15,6 +15,42 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut as firebaseSignOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+        import { getFirestore, collection, doc, setDoc, getDoc, getDocs, updateDoc, deleteDoc, onSnapshot, query, where, arrayUnion, arrayRemove } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+
+        const firebaseConfig = {
+          apiKey: "AIzaSyCsOde5aNv6HnNJMXtPLlGisXF_zXp3E5o",
+          authDomain: "diyarbakirtenis-254b1.firebaseapp.com",
+          projectId: "diyarbakirtenis-254b1",
+          storageBucket: "diyarbakirtenis-254b1.firebasestorage.app",
+          messagingSenderId: "664290250808",
+          appId: "1:664290250808:web:bd0ff27083ea50f145d6cd",
+          measurementId: "G-LL1R6KD89Q"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        window.firebaseAuth = getAuth(app);
+        window.firebaseDb = getFirestore(app);
+        window.firebaseUtils = {
+          signInWithEmailAndPassword,
+          createUserWithEmailAndPassword,
+          firebaseSignOut,
+          onAuthStateChanged,
+          collection,
+          doc,
+          setDoc,
+          getDoc,
+          getDocs,
+          updateDoc,
+          deleteDoc,
+          onSnapshot,
+          query,
+          where
+        };
+    </script>
     
     <style>
         /* YENİ FONT EKLENDİ: Righteous (Sportif Başlıklar İçin) */
@@ -398,16 +434,16 @@
         const App = () => {
             const [userRole, setUserRole] = useState(() => { const saved = localStorage.getItem('dtk_session_v1'); return saved ? JSON.parse(saved).role : null; });
             const [currentCoach, setCurrentCoach] = useState(() => { const saved = localStorage.getItem('dtk_session_v1'); return saved ? JSON.parse(saved).name : null; });
-            const [appLogo, setAppLogo] = useState(() => localStorage.getItem('dtk_logo_v1') || "https://cdn-icons-png.flaticon.com/512/33/33736.png");
-            const [adminPassword, setAdminPassword] = useState(() => localStorage.getItem('dtk_admin_pass') || "2121");
-            const [loginModalType, setLoginModalType] = useState(null); 
+            const [appLogo, setAppLogo] = useState("https://cdn-icons-png.flaticon.com/512/33/33736.png");
+            const [adminPassword, setAdminPassword] = useState("2121");
+            const [loginModalType, setLoginModalType] = useState(null);
             const [confirmModal, setConfirmModal] = useState({ isOpen: false, message: '', onConfirm: null });
             const [isSettingsOpen, setIsSettingsOpen] = useState(false);
             const [changePassData, setChangePassData] = useState({ current: '', new: '', confirm: '' });
             const [selectedDate, setSelectedDate] = useState(() => { const today = new Date(); const offset = today.getTimezoneOffset(); const localDate = new Date(today.getTime() - (offset * 60 * 1000)); return localDate.toISOString().split('T')[0]; });
-            const [groups, setGroups] = useState(() => { const saved = localStorage.getItem('diyarbakir_tennis_v4'); return saved ? JSON.parse(saved) : []; });
-            const [definedCoaches, setDefinedCoaches] = useState(() => { const saved = localStorage.getItem('diyarbakir_tennis_coaches_v1'); if (saved) return JSON.parse(saved); return [{ id: 1, name: "Mert Hoca", email: "mert@dtk.com", password: "123" }, { id: 2, name: "Selin Hoca", email: "selin@dtk.com", password: null }]; });
-            const [registeredStudents, setRegisteredStudents] = useState(() => { const saved = localStorage.getItem('diyarbakir_tennis_students_v2'); return saved ? JSON.parse(saved) : []; });
+            const [groups, setGroups] = useState([]);
+            const [definedCoaches, setDefinedCoaches] = useState([]);
+            const [registeredStudents, setRegisteredStudents] = useState([]);
             const [activeGroup, setActiveGroup] = useState(null);
             const [isModalOpen, setIsModalOpen] = useState(false); 
             const [isStudentModalOpen, setIsStudentModalOpen] = useState(false); 
@@ -432,37 +468,80 @@
             const [newInstEmail, setNewInstEmail] = useState("");
             const [editingGroup, setEditingGroup] = useState(null);
 
-            useEffect(() => { localStorage.setItem('diyarbakir_tennis_v4', JSON.stringify(groups)); }, [groups]);
-            useEffect(() => { localStorage.setItem('diyarbakir_tennis_coaches_v1', JSON.stringify(definedCoaches)); }, [definedCoaches]);
-            useEffect(() => { localStorage.setItem('diyarbakir_tennis_students_v2', JSON.stringify(registeredStudents)); }, [registeredStudents]);
-            useEffect(() => { localStorage.setItem('dtk_logo_v1', appLogo); }, [appLogo]);
-            useEffect(() => { localStorage.setItem('dtk_admin_pass', adminPassword); }, [adminPassword]);
+            useEffect(() => {
+                const unsubscribers = [];
+
+                const groupsRef = window.firebaseUtils.collection(window.firebaseDb, 'groups');
+                const unsubGroups = window.firebaseUtils.onSnapshot(groupsRef, (snapshot) => {
+                    const groupsData = [];
+                    snapshot.forEach((doc) => {
+                        groupsData.push({ ...doc.data(), id: doc.id });
+                    });
+                    setGroups(groupsData);
+                });
+                unsubscribers.push(unsubGroups);
+
+                const coachesRef = window.firebaseUtils.collection(window.firebaseDb, 'coaches');
+                const unsubCoaches = window.firebaseUtils.onSnapshot(coachesRef, (snapshot) => {
+                    const coachesData = [];
+                    snapshot.forEach((doc) => {
+                        coachesData.push({ ...doc.data(), id: doc.id });
+                    });
+                    setDefinedCoaches(coachesData.length > 0 ? coachesData : [{ id: 1, name: "Mert Hoca", email: "mert@dtk.com", password: "123" }, { id: 2, name: "Selin Hoca", email: "selin@dtk.com", password: null }]);
+                });
+                unsubscribers.push(unsubCoaches);
+
+                const studentsRef = window.firebaseUtils.collection(window.firebaseDb, 'students');
+                const unsubStudents = window.firebaseUtils.onSnapshot(studentsRef, (snapshot) => {
+                    const studentsData = [];
+                    snapshot.forEach((doc) => {
+                        studentsData.push({ ...doc.data(), id: doc.id });
+                    });
+                    setRegisteredStudents(studentsData);
+                });
+                unsubscribers.push(unsubStudents);
+
+                const settingsRef = window.firebaseUtils.doc(window.firebaseDb, 'settings', 'app');
+                const unsubSettings = window.firebaseUtils.onSnapshot(settingsRef, (doc) => {
+                    if (doc.exists()) {
+                        const data = doc.data();
+                        if (data.logo) setAppLogo(data.logo);
+                        if (data.adminPassword) setAdminPassword(data.adminPassword);
+                    }
+                });
+                unsubscribers.push(unsubSettings);
+
+                return () => {
+                    unsubscribers.forEach(unsub => unsub());
+                };
+            }, []);
 
             const validHours = ["11:00", "12:00", "13:00", "14:00", "15:00", "16:00"];
             const askConfirmation = (message, action) => { setConfirmModal({ isOpen: true, message, onConfirm: action }); };
             const closeConfirmModal = () => { setConfirmModal({ isOpen: false, message: '', onConfirm: null }); };
             const executeConfirm = () => { if (confirmModal.onConfirm) confirmModal.onConfirm(); closeConfirmModal(); };
             const handleLogout = () => { setUserRole(null); setCurrentCoach(null); setActiveGroup(null); localStorage.removeItem('dtk_session_v1'); };
+            const handleLogoUpdate = async (newLogo) => { const settingsRef = window.firebaseUtils.doc(window.firebaseDb, 'settings', 'app'); await window.firebaseUtils.setDoc(settingsRef, { logo: newLogo, adminPassword: adminPassword }, { merge: true }); };
             const addScheduleSlot = () => { const exists = tempSchedule.some(s => s.day === tempDay && s.time === tempTime); if(!exists) setTempSchedule([...tempSchedule, {day: tempDay, time: tempTime}]); };
             const removeScheduleSlot = (idx) => setTempSchedule(tempSchedule.filter((_, i) => i !== idx));
             const openEditGroupModal = (group, e) => { e.stopPropagation(); setEditingGroup(group); setNewGroupName(group.name); setNewCoachName(group.instructor); setTempSchedule(group.schedule); setIsModalOpen(true); };
-            const handleSaveGroup = (e) => { e.preventDefault(); if(tempSchedule.length === 0) { alert("Lütfen saat ekleyiniz."); return; } if (editingGroup) { const updatedGroups = groups.map(g => g.id === editingGroup.id ? { ...g, name: newGroupName, instructor: newCoachName, schedule: tempSchedule } : g); setGroups(updatedGroups); } else { const newGroup = { id: Date.now(), name: newGroupName, instructor: newCoachName, schedule: tempSchedule, players: [], records: {} }; setGroups([...groups, newGroup]); } setIsModalOpen(false); setEditingGroup(null); setNewGroupName(""); setNewCoachName(""); setTempSchedule([]); };
-            const handleAddCoach = (e) => { e.preventDefault(); if (definedCoaches.some(i => i.email === newInstEmail)) { alert("Bu e-posta zaten kayıtlı."); return; } const newInst = { id: Date.now(), name: newInstName, email: newInstEmail, password: null }; setDefinedCoaches([...definedCoaches, newInst]); setIsCoachModalOpen(false); setNewInstName(""); setNewInstEmail(""); alert("Antrenör başarıyla eklendi."); };
-            const handleDeleteGroup = (id, e) => { if(e) e.stopPropagation(); askConfirmation("Bu grubu ve içindeki tüm ders programını silmek istediğinize emin misiniz?", () => setGroups(groups.filter(g => g.id !== id))); };
-            const addPlayerLogic = (targetGroupId, studentName, studentId = null, studentAge = "", studentPhone = "", studentPhoto = null) => { const newId = studentId || Date.now(); const newPlayer = { id: newId, name: studentName, age: studentAge, phone: studentPhone, photo: studentPhoto }; const updatedGroups = groups.map(g => { if (g.id.toString() === targetGroupId.toString()) { if(g.players.some(p => p.name === studentName)) return g; return { ...g, players: [...g.players, newPlayer] }; } return g; }); setGroups(updatedGroups); if(!registeredStudents.some(rs => rs.id === newId)) setRegisteredStudents(prev => [...prev, newPlayer]); };
-            const handleRemovePlayerFromGroup = (groupId, playerId) => { askConfirmation("Bu öğrenciyi gruptan çıkarmak istediğinize emin misiniz?", () => { const updatedGroups = groups.map(g => { if (g.id === groupId) return { ...g, players: g.players.filter(p => p.id !== playerId) }; return g; }); setGroups(updatedGroups); if(activeGroup && activeGroup.id === groupId) setActiveGroup(updatedGroups.find(g => g.id === groupId)); }); };
+            const handleSaveGroup = async (e) => { e.preventDefault(); if(tempSchedule.length === 0) { alert("Lütfen saat ekleyiniz."); return; } if (editingGroup) { const groupRef = window.firebaseUtils.doc(window.firebaseDb, 'groups', editingGroup.id.toString()); await window.firebaseUtils.updateDoc(groupRef, { name: newGroupName, instructor: newCoachName, schedule: tempSchedule }); } else { const newGroup = { id: Date.now(), name: newGroupName, instructor: newCoachName, schedule: tempSchedule, players: [], records: {} }; const groupRef = window.firebaseUtils.doc(window.firebaseDb, 'groups', newGroup.id.toString()); await window.firebaseUtils.setDoc(groupRef, newGroup); } setIsModalOpen(false); setEditingGroup(null); setNewGroupName(""); setNewCoachName(""); setTempSchedule([]); };
+            const handleAddCoach = async (e) => { e.preventDefault(); if (definedCoaches.some(i => i.email === newInstEmail)) { alert("Bu e-posta zaten kayıtlı."); return; } const newInst = { id: Date.now(), name: newInstName, email: newInstEmail, password: null }; const coachRef = window.firebaseUtils.doc(window.firebaseDb, 'coaches', newInst.id.toString()); await window.firebaseUtils.setDoc(coachRef, newInst); setIsCoachModalOpen(false); setNewInstName(""); setNewInstEmail(""); alert("Antrenör başarıyla eklendi."); };
+            const handleDeleteGroup = (id, e) => { if(e) e.stopPropagation(); askConfirmation("Bu grubu ve içindeki tüm ders programını silmek istediğinize emin misiniz?", async () => { const groupRef = window.firebaseUtils.doc(window.firebaseDb, 'groups', id.toString()); await window.firebaseUtils.deleteDoc(groupRef); }); };
+            const addPlayerLogic = async (targetGroupId, studentName, studentId = null, studentAge = "", studentPhone = "", studentPhoto = null) => { const newId = studentId || Date.now(); const newPlayer = { id: newId, name: studentName, age: studentAge, phone: studentPhone, photo: studentPhoto }; const targetGroup = groups.find(g => g.id.toString() === targetGroupId.toString()); if (targetGroup && !targetGroup.players.some(p => p.name === studentName)) { const groupRef = window.firebaseUtils.doc(window.firebaseDb, 'groups', targetGroupId.toString()); await window.firebaseUtils.updateDoc(groupRef, { players: [...targetGroup.players, newPlayer] }); } if(!registeredStudents.some(rs => rs.id === newId)) { const studentRef = window.firebaseUtils.doc(window.firebaseDb, 'students', newId.toString()); await window.firebaseUtils.setDoc(studentRef, newPlayer); } };
+            const handleRemovePlayerFromGroup = (groupId, playerId) => { askConfirmation("Bu öğrenciyi gruptan çıkarmak istediğinize emin misiniz?", async () => { const targetGroup = groups.find(g => g.id === groupId); if (targetGroup) { const groupRef = window.firebaseUtils.doc(window.firebaseDb, 'groups', groupId.toString()); await window.firebaseUtils.updateDoc(groupRef, { players: targetGroup.players.filter(p => p.id !== playerId) }); if(activeGroup && activeGroup.id === groupId) setActiveGroup({ ...targetGroup, players: targetGroup.players.filter(p => p.id !== playerId) }); } }); };
             const photoInputRef = useRef(null);
             const handlePhotoChange = (e) => { const file = e.target.files[0]; if(file) { const reader = new FileReader(); reader.onloadend = () => setNewStudentPhoto(reader.result); reader.readAsDataURL(file); } };
             const handleAddPlayerFromDetail = (e) => { e.preventDefault(); if(newStudentName.trim()) addPlayerLogic(activeGroup.id, newStudentName.trim(), null, newStudentAge, newStudentPhone, null); setNewStudentName(""); setNewStudentAge(""); setNewStudentPhone(""); };
-            const handleAddStudentGlobal = (e) => { e.preventDefault(); if(newStudentName.trim()) { const newId = Date.now(); if (selectedGroupIdForStudent) addPlayerLogic(selectedGroupIdForStudent, newStudentName.trim(), newId, newStudentAge, newStudentPhone, newStudentPhoto); else { const newPlayer = { id: newId, name: newStudentName.trim(), age: newStudentAge, phone: newStudentPhone, photo: newStudentPhoto }; setRegisteredStudents(prev => [...prev, newPlayer]); } } setIsStudentModalOpen(false); setNewStudentName(""); setNewStudentAge(""); setNewStudentPhone(""); setSelectedGroupIdForStudent(""); setNewStudentPhoto(null); };
+            const handleAddStudentGlobal = async (e) => { e.preventDefault(); if(newStudentName.trim()) { const newId = Date.now(); if (selectedGroupIdForStudent) await addPlayerLogic(selectedGroupIdForStudent, newStudentName.trim(), newId, newStudentAge, newStudentPhone, newStudentPhoto); else { const newPlayer = { id: newId, name: newStudentName.trim(), age: newStudentAge, phone: newStudentPhone, photo: newStudentPhoto }; const studentRef = window.firebaseUtils.doc(window.firebaseDb, 'students', newId.toString()); await window.firebaseUtils.setDoc(studentRef, newPlayer); } } setIsStudentModalOpen(false); setNewStudentName(""); setNewStudentAge(""); setNewStudentPhone(""); setSelectedGroupIdForStudent(""); setNewStudentPhoto(null); };
             const handleToggleSelection = (id) => { if (selectedMemberIds.includes(id)) setSelectedMemberIds(selectedMemberIds.filter(sid => sid !== id)); else setSelectedMemberIds([...selectedMemberIds, id]); };
-            const handleAddMultipleExistingStudents = (e) => { e.preventDefault(); if (!targetGroupForAdd || selectedMemberIds.length === 0) return; const updatedGroups = groups.map(g => { if (g.id === targetGroupForAdd.id) { const newPlayers = [...g.players]; selectedMemberIds.forEach(sid => { const student = registeredStudents.find(s => s.id === sid); if(student && !newPlayers.some(p => p.id === sid)) newPlayers.push(student); }); return { ...g, players: newPlayers }; } return g; }); setGroups(updatedGroups); setIsAddExistingStudentModalOpen(false); setSelectedMemberIds([]); setTargetGroupForAdd(null); };
-            const handleDeleteCoach = (id) => { const inst = definedCoaches.find(i => i.id === id); if (!inst) return; const assignedGroups = groups.filter(g => g.instructor === inst.name); const confirmMessage = assignedGroups.length > 0 ? `Bu antrenörün yönettiği ${assignedGroups.length} grup var. Silinirse gruplar antrenörsüz kalacak.` : `${inst.name} adlı antrenörü silmek istediğinize emin misiniz?`; askConfirmation(confirmMessage, () => setDefinedCoaches(prev => prev.filter(i => i.id !== id))); };
-            const handleResetCoachPassword = (id) => { askConfirmation("Bu antrenörün şifresini '1234' olarak sıfırlamak istediğinize emin misiniz?", () => { setDefinedCoaches(prev => prev.map(i => i.id === id ? { ...i, password: "1234" } : i)); alert("Şifre '1234' olarak sıfırlandı."); }); };
-            const handleDeleteStudentFromRegistry = (studentId) => { askConfirmation("Bu öğrenciyi sistemden silerseniz, dahil olduğu tüm gruplardan da çıkarılacaktır.", () => { setGroups(groups.map(g => ({ ...g, players: g.players.filter(p => p.id !== studentId) }))); setRegisteredStudents(prev => prev.filter(s => s.id !== studentId)); }); };
-            const handleChangeAdminPassword = (e) => { e.preventDefault(); if(changePassData.current !== adminPassword) { alert("Mevcut şifre yanlış!"); return; } if(changePassData.new.length < 4) { alert("Yeni şifre en az 4 karakter olmalı."); return; } if(changePassData.new !== changePassData.confirm) { alert("Yeni şifreler uyuşmuyor."); return; } askConfirmation("Yönetici şifresini değiştirmek istediğinize emin misiniz?", () => { setAdminPassword(changePassData.new); setIsSettingsOpen(false); setChangePassData({ current: '', new: '', confirm: '' }); alert("Şifreniz başarıyla değiştirildi."); }); };
+            const handleAddMultipleExistingStudents = async (e) => { e.preventDefault(); if (!targetGroupForAdd || selectedMemberIds.length === 0) return; const newPlayers = [...targetGroupForAdd.players]; selectedMemberIds.forEach(sid => { const student = registeredStudents.find(s => s.id === sid); if(student && !newPlayers.some(p => p.id === sid)) newPlayers.push(student); }); const groupRef = window.firebaseUtils.doc(window.firebaseDb, 'groups', targetGroupForAdd.id.toString()); await window.firebaseUtils.updateDoc(groupRef, { players: newPlayers }); setIsAddExistingStudentModalOpen(false); setSelectedMemberIds([]); setTargetGroupForAdd(null); };
+            const handleDeleteCoach = (id) => { const inst = definedCoaches.find(i => i.id === id); if (!inst) return; const assignedGroups = groups.filter(g => g.instructor === inst.name); const confirmMessage = assignedGroups.length > 0 ? `Bu antrenörün yönettiği ${assignedGroups.length} grup var. Silinirse gruplar antrenörsüz kalacak.` : `${inst.name} adlı antrenörü silmek istediğinize emin misiniz?`; askConfirmation(confirmMessage, async () => { const coachRef = window.firebaseUtils.doc(window.firebaseDb, 'coaches', id.toString()); await window.firebaseUtils.deleteDoc(coachRef); }); };
+            const handleResetCoachPassword = (id) => { askConfirmation("Bu antrenörün şifresini '1234' olarak sıfırlamak istediğinize emin misiniz?", async () => { const coachRef = window.firebaseUtils.doc(window.firebaseDb, 'coaches', id.toString()); await window.firebaseUtils.updateDoc(coachRef, { password: "1234" }); alert("Şifre '1234' olarak sıfırlandı."); }); };
+            const handleDeleteStudentFromRegistry = (studentId) => { askConfirmation("Bu öğrenciyi sistemden silerseniz, dahil olduğu tüm gruplardan da çıkarılacaktır.", async () => { const affectedGroups = groups.filter(g => g.players.some(p => p.id === studentId)); for (const group of affectedGroups) { const groupRef = window.firebaseUtils.doc(window.firebaseDb, 'groups', group.id.toString()); await window.firebaseUtils.updateDoc(groupRef, { players: group.players.filter(p => p.id !== studentId) }); } const studentRef = window.firebaseUtils.doc(window.firebaseDb, 'students', studentId.toString()); await window.firebaseUtils.deleteDoc(studentRef); }); };
+            const handleChangeAdminPassword = (e) => { e.preventDefault(); if(changePassData.current !== adminPassword) { alert("Mevcut şifre yanlış!"); return; } if(changePassData.new.length < 4) { alert("Yeni şifre en az 4 karakter olmalı."); return; } if(changePassData.new !== changePassData.confirm) { alert("Yeni şifreler uyuşmuyor."); return; } askConfirmation("Yönetici şifresini değiştirmek istediğinize emin misiniz?", async () => { const settingsRef = window.firebaseUtils.doc(window.firebaseDb, 'settings', 'app'); await window.firebaseUtils.setDoc(settingsRef, { adminPassword: changePassData.new, logo: appLogo }, { merge: true }); setIsSettingsOpen(false); setChangePassData({ current: '', new: '', confirm: '' }); alert("Şifreniz başarıyla değiştirildi."); }); };
             const getAttendanceInfo = (group, date) => { const recs = group.records[date]; if (!recs) return { taken: false, presentCount: 0 }; const taken = Object.keys(recs).length > 0; const presentCount = Object.values(recs).filter(s => s === 'present').length; return { taken, presentCount }; };
-            const toggleAttendance = (playerId, status) => { const updatedGroups = groups.map(g => { if (g.id === activeGroup.id) { const recs = g.records[selectedDate] || {}; const newStatus = recs[playerId] === status ? null : status; return { ...g, records: { ...g.records, [selectedDate]: { ...recs, [playerId]: newStatus } } }; } return g; }); setGroups(updatedGroups); if(activeGroup) setActiveGroup(updatedGroups.find(g => g.id === activeGroup.id)); };
+            const toggleAttendance = async (playerId, status) => { const targetGroup = groups.find(g => g.id === activeGroup.id); if (targetGroup) { const recs = targetGroup.records[selectedDate] || {}; const newStatus = recs[playerId] === status ? null : status; const updatedRecords = { ...targetGroup.records, [selectedDate]: { ...recs, [playerId]: newStatus } }; const groupRef = window.firebaseUtils.doc(window.firebaseDb, 'groups', activeGroup.id.toString()); await window.firebaseUtils.updateDoc(groupRef, { records: updatedRecords }); if(activeGroup) setActiveGroup({ ...targetGroup, records: updatedRecords }); } };
 
             const LoginPopup = () => {
                 const [step, setStep] = useState('email'); const [email, setEmail] = useState(""); const [password, setPassword] = useState(""); const [confirmPass, setConfirmPass] = useState(""); const [error, setError] = useState(""); const [foundInst, setFoundInst] = useState(null);
@@ -470,7 +549,7 @@
                 const handleAdminLogin = (e) => { e.preventDefault(); if (password === adminPassword) { setUserRole('admin'); setLoginModalType(null); setAdminTab('schedule'); localStorage.setItem('dtk_session_v1', JSON.stringify({ role: 'admin' })); } else setError("Hatalı şifre!"); };
                 const checkEmail = (e) => { e.preventDefault(); const inst = definedCoaches.find(i => i.email === email); if (inst) { setFoundInst(inst); if (inst.password) setStep('password'); else setStep('set-password'); setError(""); } else setError("Kayıtlı antrenör bulunamadı."); };
                 const verifyPassword = (e) => { e.preventDefault(); if (foundInst.password === password) { setUserRole('coach'); setCurrentCoach(foundInst.name); setLoginModalType(null); localStorage.setItem('dtk_session_v1', JSON.stringify({ role: 'coach', name: foundInst.name })); } else setError("Şifre yanlış."); };
-                const setNewPassword = (e) => { e.preventDefault(); if (password.length < 4) { setError("Şifre en az 4 karakter olmalı."); return; } if (password !== confirmPass) { setError("Şifreler uyuşmuyor."); return; } setDefinedCoaches(definedCoaches.map(i => i.id === foundInst.id ? { ...i, password: password } : i)); setUserRole('coach'); setCurrentCoach(foundInst.name); setLoginModalType(null); localStorage.setItem('dtk_session_v1', JSON.stringify({ role: 'coach', name: foundInst.name })); };
+                const setNewPassword = async (e) => { e.preventDefault(); if (password.length < 4) { setError("Şifre en az 4 karakter olmalı."); return; } if (password !== confirmPass) { setError("Şifreler uyuşmuyor."); return; } const coachRef = window.firebaseUtils.doc(window.firebaseDb, 'coaches', foundInst.id.toString()); await window.firebaseUtils.updateDoc(coachRef, { password: password }); setUserRole('coach'); setCurrentCoach(foundInst.name); setLoginModalType(null); localStorage.setItem('dtk_session_v1', JSON.stringify({ role: 'coach', name: foundInst.name })); };
                 if (!loginModalType) return null;
                 return (
                     <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-[fadeIn_0.2s_ease-out]">
@@ -687,7 +766,7 @@
 
             return (
                 <div className="min-h-screen bg-tennis-court flex flex-col relative">
-                    <Header title="Diyarbakır Tenis Kulübü" onBack={() => {}} userRole={userRole} currentCoach={currentCoach} onShowLogin={() => setShowLogin(true)} onLogout={handleLogout} logoUrl={appLogo} onLogoUpdate={setAppLogo} onOpenSettings={() => setIsSettingsOpen(true)} />
+                    <Header title="Diyarbakır Tenis Kulübü" onBack={() => {}} userRole={userRole} currentCoach={currentCoach} onShowLogin={() => setShowLogin(true)} onLogout={handleLogout} logoUrl={appLogo} onLogoUpdate={handleLogoUpdate} onOpenSettings={() => setIsSettingsOpen(true)} />
                     
                     <div className="flex-1 overflow-y-auto">
                         {userRole === 'admin' ? (
