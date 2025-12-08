@@ -13,7 +13,7 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
+<body class="bg-tennis-court min-h-screen">
     <div id="root"></div>
 
     <script type="module" src="firebase.js"></script>
@@ -55,7 +55,6 @@
     </script>
     
     <style>
-        /* YENİ FONT EKLENDİ: Righteous (Sportif Başlıklar İçin) */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Righteous&display=swap');
         
         body { font-family: 'Inter', sans-serif; background-color: #f0fdf4; }
@@ -70,7 +69,6 @@
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         .animate-slide-up { animation: slideUp 0.5s ease-out forwards; }
         
-        /* PREMIUM TASARIM CSS */
         .bg-tennis-court {
             background-image: linear-gradient(to bottom, rgba(240, 253, 244, 0.9), rgba(240, 253, 244, 0.95)), url('https://images.unsplash.com/photo-1575361204480-aadea2534679?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
             background-size: cover;
@@ -105,14 +103,10 @@
             margin: 0 10px;
         }
     </style>
-</head>
-<body class="bg-tennis-court min-h-screen">
-    <div id="root"></div>
 
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
 
-        // --- İKONLAR ---
         const icons = {
             ChartPie: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>,
             TrendingUp: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>,
@@ -156,8 +150,6 @@
         const getStatusColor = (status) => status === 'present' ? 'bg-lime-500' : status === 'absent' ? 'bg-red-500' : 'bg-gray-200';
         const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
 
-        // --- BİLEŞENLER ---
-        
         const Header = ({ title, showBack = false, onBack, userRole, currentCoach, onShowLogin, onLogout, logoUrl, onLogoUpdate, onOpenSettings }) => {
             const fileInputRef = useRef(null);
 
@@ -614,7 +606,8 @@
                             <div key={hour} className="flex border-b border-gray-100/30 h-28 relative">
                                 <div className="w-20 flex-shrink-0 p-2 border-r border-gray-100/50 bg-gray-50/80 flex items-center justify-center text-sm font-bold text-gray-500 sticky left-0 z-10 shadow-sm backdrop-blur-md">{hour}</div>
                                 {coaches.map(inst => {
-                                    const group = dailyGroups.find(g => g.instructor === inst.name && g.schedule&& g.schedule.some(s => s.time === hour && s.day === getDayNameFromDate(selectedDate)));
+                                    // GÜVENLİK KONTROLÜ EKLENDİ: g.schedule &&
+                                    const group = dailyGroups.find(g => g.instructor === inst.name && g.schedule && g.schedule.some(s => s.time === hour && s.day === getDayNameFromDate(selectedDate)));
                                     if (group) {
                                         const { taken, presentCount } = getAttendanceInfo(group, selectedDate);
                                         const bgClass = taken ? "bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/20" : "bg-blue-500/5 border-blue-500/20 hover:bg-blue-500/10";
@@ -641,7 +634,8 @@
                         <div key={group.id} className="glass-card rounded-2xl p-5 shadow-sm border border-white/50 flex items-center justify-between hover:shadow-md transition-all">
                             <div onClick={() => setActiveGroup(group)} className="flex-1 cursor-pointer">
                                 <div className="flex items-center gap-2 mb-2"><h3 className="font-bold text-lg text-gray-800 tracking-tight">{group.name}</h3></div>
-                                <div className="flex flex-wrap gap-2 mb-3">{group.schedule.map((s, idx) => (<span key={idx} className="bg-emerald-100/50 border border-emerald-200/50 text-xs px-3 py-1 rounded-full text-emerald-700 font-medium">{s.day.slice(0,3)} {s.time}</span>))}</div>
+                                {/* GÜVENLİK KONTROLÜ EKLENDİ: group.schedule && */}
+                                <div className="flex flex-wrap gap-2 mb-3">{group.schedule && group.schedule.map((s, idx) => (<span key={idx} className="bg-emerald-100/50 border border-emerald-200/50 text-xs px-3 py-1 rounded-full text-emerald-700 font-medium">{s.day.slice(0,3)} {s.time}</span>))}</div>
                                 <p className="text-sm text-gray-600 font-medium flex items-center gap-2"><Icon name="UserSquare" size={16} className="text-gray-400"/> {group.instructor}</p>
                             </div>
                             <div className="flex items-center gap-2">
@@ -673,14 +667,16 @@
 
             const StandardView = ({ dailyGroups }) => {
                 const currentDayName = getDayNameFromDate(selectedDate);
-                let filtered = dailyGroups.filter(g => g.schedule.some(s => s.day === currentDayName));
+                // GÜVENLİK KONTROLÜ EKLENDİ: g.schedule &&
+                let filtered = dailyGroups.filter(g => g.schedule && g.schedule.some(s => s.day === currentDayName));
                 if (userRole === 'coach') filtered = filtered.filter(g => g.instructor === currentCoach);
                 if (filtered.length === 0) return <div className="text-center py-20 text-gray-400/80 border-2 border-dashed border-gray-300/50 m-4 rounded-3xl font-medium glass-card">Bugün için ders programı bulunmuyor.</div>;
 
                 return (
                     <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 pb-4">
                         {filtered.map(g => {
-                            const time = g.schedule.find(s => s.day === currentDayName)?.time || "";
+                            // GÜVENLİK KONTROLÜ: g.schedule &&
+                            const time = (g.schedule && g.schedule.find(s => s.day === currentDayName)?.time) || "";
                             const { taken, presentCount } = getAttendanceInfo(g, selectedDate);
                             const borderClass = taken ? "border-emerald-500/50 shadow-emerald-100/50" : "border-white/50 shadow-sm";
                             return (
@@ -728,10 +724,12 @@
             if (!userRole) return <><WelcomeScreen onAdminClick={() => setLoginModalType('admin')} onCoachClick={() => setLoginModalType('coach')} logoUrl={appLogo} /><LoginPopup /></>;
 
             const currentDayName = getDayNameFromDate(selectedDate);
-            const dailyGroups = groups.filter(g => g.schedule.some(s => s.day === currentDayName));
+            // GÜVENLİK KONTROLÜ EKLENDİ: g.schedule && (ANA CRASH BURADAYDI)
+            const dailyGroups = groups.filter(g => g.schedule && g.schedule.some(s => s.day === currentDayName));
 
             if (activeGroup) {
-                const relevantSlot = activeGroup.schedule.find(s => s.day === currentDayName);
+                // GÜVENLİK KONTROLÜ: activeGroup.schedule &&
+                const relevantSlot = activeGroup.schedule && activeGroup.schedule.find(s => s.day === currentDayName);
                 const recs = activeGroup.records[selectedDate] || {};
                 const presentCount = activeGroup.players.filter(p => recs[p.id] === 'present').length;
                 const absentCount = activeGroup.players.filter(p => recs[p.id] === 'absent').length;
@@ -863,7 +861,7 @@
                                             <input type="file" ref={photoInputRef} onChange={handlePhotoChange} className="absolute inset-0 opacity-0 cursor-pointer" accept="image/*" />
                                         </div>
                                     </div>
-                                    <div className="space-y-3 p-5 bg-gray-50/50 rounded-3xl border border-gray-100/50"><label className="text-xs font-bold text-gray-500 ml-1 uppercase tracking-wider">ÖĞRENCİ BİLGİSİ</label><input placeholder="Ad Soyad" value={newStudentName} onChange={e=> setNewStudentName(e.target.value)} className="w-full border-2 border-gray-200/80 p-3 rounded-2xl text-sm outline-none focus:border-emerald-500 bg-white/80 font-medium transition-all focus:bg-white shadow-sm" /><div className="grid grid-cols-2 gap-3"><input type="number" placeholder="Yaş" value={newStudentAge} onChange={e=>setNewStudentAge(e.target.value)} className="border-2 border-gray-200/80 p-3 rounded-2xl text-sm outline-none focus:border-emerald-500 bg-white/80 font-medium transition-all focus:bg-white shadow-sm" /><input type="tel" placeholder="Telefon No" value={newStudentPhone} onChange={e=>setNewStudentPhone(e.target.value)} className="border-2 border-gray-200/80 p-3 rounded-2xl text-sm outline-none focus:border-emerald-500 bg-white/80 font-medium transition-all focus:bg-white shadow-sm" /></div></div><div className="pt-2 p-5 bg-gray-50/50 rounded-3xl border border-gray-100/50"><label className="text-xs font-bold text-gray-500 ml-1 uppercase tracking-wider">HEDEF GRUP (İsteğe Bağlı)</label><div className="relative mt-2"><select className="w-full border-2 border-gray-200/80 p-3 rounded-2xl outline-none bg-white/80 text-sm font-medium shadow-sm appearance-none" value={selectedGroupIdForStudent} onChange={(e) => setSelectedGroupIdForStudent(e.target.value)}><option value="">Grup Seçiniz (Opsiyonel)...</option>{groups.map(g => (<option key={g.id} value={g.id}>{g.name} ({g.schedule.length} ders/hf)</option>))}</select><Icon name="ChevronLeft" className="absolute right-4 top-4 rotate-90 text-gray-400 pointer-events-none" size={16} /></div></div><div className="flex gap-4 mt-8"><button type="button" onClick={()=>setIsStudentModalOpen(false)} className="flex-1 py-4 bg-gray-100/80 rounded-2xl text-gray-600 font-bold text-lg hover:bg-gray-200/80 transition-colors">İptal</button><button type="submit" className="flex-1 py-4 bg-emerald-600 text-white rounded-2xl font-bold text-lg shadow-md hover:bg-emerald-700 transition-colors">Kaydet</button></div>
+                                    <div className="space-y-3 p-5 bg-gray-50/50 rounded-3xl border border-gray-100/50"><label className="text-xs font-bold text-gray-500 ml-1 uppercase tracking-wider">ÖĞRENCİ BİLGİSİ</label><input placeholder="Ad Soyad" value={newStudentName} onChange={e=> setNewStudentName(e.target.value)} className="w-full border-2 border-gray-200/80 p-3 rounded-2xl text-sm outline-none focus:border-emerald-500 bg-white/80 font-medium transition-all focus:bg-white shadow-sm" /><div className="grid grid-cols-2 gap-3"><input type="number" placeholder="Yaş" value={newStudentAge} onChange={e=>setNewStudentAge(e.target.value)} className="border-2 border-gray-200/80 p-3 rounded-2xl text-sm outline-none focus:border-emerald-500 bg-white/80 font-medium transition-all focus:bg-white shadow-sm" /><input type="tel" placeholder="Telefon No" value={newStudentPhone} onChange={e=>setNewStudentPhone(e.target.value)} className="border-2 border-gray-200/80 p-3 rounded-2xl text-sm outline-none focus:border-emerald-500 bg-white/80 font-medium transition-all focus:bg-white shadow-sm" /></div></div><div className="pt-2 p-5 bg-gray-50/50 rounded-3xl border border-gray-100/50"><label className="text-xs font-bold text-gray-500 ml-1 uppercase tracking-wider">HEDEF GRUP (İsteğe Bağlı)</label><div className="relative mt-2"><select className="w-full border-2 border-gray-200/80 p-3 rounded-2xl outline-none bg-white/80 text-sm font-medium shadow-sm appearance-none" value={selectedGroupIdForStudent} onChange={(e) => setSelectedGroupIdForStudent(e.target.value)}><option value="">Grup Seçiniz (Opsiyonel)...</option>{groups.map(g => (<option key={g.id} value={g.id}>{g.name} ({g.schedule ? g.schedule.length : 0} ders/hf)</option>))}</select><Icon name="ChevronLeft" className="absolute right-4 top-4 rotate-90 text-gray-400 pointer-events-none" size={16} /></div></div><div className="flex gap-4 mt-8"><button type="button" onClick={()=>setIsStudentModalOpen(false)} className="flex-1 py-4 bg-gray-100/80 rounded-2xl text-gray-600 font-bold text-lg hover:bg-gray-200/80 transition-colors">İptal</button><button type="submit" className="flex-1 py-4 bg-emerald-600 text-white rounded-2xl font-bold text-lg shadow-md hover:bg-emerald-700 transition-colors">Kaydet</button></div>
                                 </form>
                             </div>
                         </div>
