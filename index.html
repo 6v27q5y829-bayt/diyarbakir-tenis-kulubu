@@ -278,7 +278,7 @@
             const detailedRecords = useMemo(() => {
                 const details = [];
                 groups.forEach(g => {
-                    if(g.players.some(pl => pl.id === student.id)) {
+                    if(g.players && g.players.some(pl => pl.id === student.id)) {
                         Object.entries(g.records).forEach(([ds, st]) => {
                             const s = st[student.id];
                             if(s) {
@@ -355,7 +355,7 @@
                 students.forEach(s => {
                     let present = 0;
                     groups.forEach(g => {
-                        if(g.players.some(p => p.id === s.id)) {
+                        if(g.players && g.players.some(p => p.id === s.id)) {
                             Object.values(g.records).forEach(rec => {
                                 if(rec[s.id] === 'present') present++;
                             });
@@ -372,7 +372,7 @@
                     let total = 0;
                     let absent = 0;
                     groups.forEach(g => {
-                        if(g.players.some(p => p.id === s.id)) {
+                        if(g.players && g.players.some(p => p.id === s.id)) {
                             Object.values(g.records).forEach(rec => {
                                 if(rec[s.id]) {
                                     total++;
@@ -584,7 +584,7 @@
             const handleAddMultipleExistingStudents = async (e) => { e.preventDefault(); if (!targetGroupForAdd || selectedMemberIds.length === 0) return; const newPlayers = [...targetGroupForAdd.players]; selectedMemberIds.forEach(sid => { const student = registeredStudents.find(s => s.id === sid); if(student && !newPlayers.some(p => p.id === sid)) newPlayers.push(student); }); const groupRef = window.firebaseUtils.doc(window.firebaseDb, 'groups', targetGroupForAdd.id.toString()); await window.firebaseUtils.updateDoc(groupRef, { players: newPlayers }); setIsAddExistingStudentModalOpen(false); setSelectedMemberIds([]); setTargetGroupForAdd(null); };
             const handleDeleteCoach = (id) => { const inst = definedCoaches.find(i => i.id === id); if (!inst) return; const assignedGroups = groups.filter(g => g.instructor === inst.name); const confirmMessage = assignedGroups.length > 0 ? `Bu antrenörün yönettiği ${assignedGroups.length} grup var. Silinirse gruplar antrenörsüz kalacak.` : `${inst.name} adlı antrenörü silmek istediğinize emin misiniz?`; askConfirmation(confirmMessage, async () => { const coachRef = window.firebaseUtils.doc(window.firebaseDb, 'coaches', id.toString()); await window.firebaseUtils.deleteDoc(coachRef); }); };
             const handleResetCoachPassword = (id) => { askConfirmation("Bu antrenörün şifresini '1234' olarak sıfırlamak istediğinize emin misiniz?", async () => { const coachRef = window.firebaseUtils.doc(window.firebaseDb, 'coaches', id.toString()); await window.firebaseUtils.updateDoc(coachRef, { password: "1234" }); alert("Şifre '1234' olarak sıfırlandı."); }); };
-            const handleDeleteStudentFromRegistry = (studentId) => { askConfirmation("Bu öğrenciyi sistemden silerseniz, dahil olduğu tüm gruplardan da çıkarılacaktır.", async () => { const affectedGroups = groups.filter(g => g.players.some(p => p.id === studentId)); for (const group of affectedGroups) { const groupRef = window.firebaseUtils.doc(window.firebaseDb, 'groups', group.id.toString()); await window.firebaseUtils.updateDoc(groupRef, { players: group.players.filter(p => p.id !== studentId) }); } const studentRef = window.firebaseUtils.doc(window.firebaseDb, 'students', studentId.toString()); await window.firebaseUtils.deleteDoc(studentRef); }); };
+            const handleDeleteStudentFromRegistry = (studentId) => { askConfirmation("Bu öğrenciyi sistemden silerseniz, dahil olduğu tüm gruplardan da çıkarılacaktır.", async () => { const affectedGroups = groups.filter(g => g.players && g.players.some(p => p.id === studentId)); for (const group of affectedGroups) { const groupRef = window.firebaseUtils.doc(window.firebaseDb, 'groups', group.id.toString()); await window.firebaseUtils.updateDoc(groupRef, { players: group.players.filter(p => p.id !== studentId) }); } const studentRef = window.firebaseUtils.doc(window.firebaseDb, 'students', studentId.toString()); await window.firebaseUtils.deleteDoc(studentRef); }); };
             const handleChangeAdminPassword = (e) => { e.preventDefault(); if(changePassData.current !== adminPassword) { alert("Mevcut şifre yanlış!"); return; } if(changePassData.new.length < 4) { alert("Yeni şifre en az 4 karakter olmalı."); return; } if(changePassData.new !== changePassData.confirm) { alert("Yeni şifreler uyuşmuyor."); return; } askConfirmation("Yönetici şifresini değiştirmek istediğinize emin misiniz?", async () => { const settingsRef = window.firebaseUtils.doc(window.firebaseDb, 'settings', 'app'); await window.firebaseUtils.setDoc(settingsRef, { adminPassword: changePassData.new, logo: appLogo }, { merge: true }); setIsSettingsOpen(false); setChangePassData({ current: '', new: '', confirm: '' }); alert("Şifreniz başarıyla değiştirildi."); }); };
             const getAttendanceInfo = (group, date) => { const recs = group.records[date]; if (!recs) return { taken: false, presentCount: 0 }; const taken = Object.keys(recs).length > 0; const presentCount = Object.values(recs).filter(s => s === 'present').length; return { taken, presentCount }; };
             const toggleAttendance = async (playerId, status) => { const targetGroup = groups.find(g => g.id === activeGroup.id); if (targetGroup) { const recs = targetGroup.records[selectedDate] || {}; const newStatus = recs[playerId] === status ? null : status; const updatedRecords = { ...targetGroup.records, [selectedDate]: { ...recs, [playerId]: newStatus } }; const groupRef = window.firebaseUtils.doc(window.firebaseDb, 'groups', activeGroup.id.toString()); await window.firebaseUtils.updateDoc(groupRef, { records: updatedRecords }); if(activeGroup) setActiveGroup({ ...targetGroup, records: updatedRecords }); } };
@@ -663,11 +663,13 @@
                                     if (group) {
                                         const { taken, presentCount } = getAttendanceInfo(group, selectedDate);
                                         const bgClass = taken ? "bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/20" : "bg-blue-500/5 border-blue-500/20 hover:bg-blue-500/10";
+                                        // GÜVENLİK: (group.players || []) yaparak boş grup hatasını engelledik
+                                        const playerCount = (group.players || []).length;
                                         return (
                                             <div key={`${inst.id}-${hour}`} className="flex-1 border-r border-gray-100/30 p-1 relative min-w-[120px]">
                                                 <div onClick={() => onGroupClick(group)} className={`w-full h-full border rounded-2xl p-3 cursor-pointer transition-all flex flex-col justify-center gap-2 shadow-sm overflow-hidden backdrop-blur-sm group ${bgClass}`}>
                                                     <div className="font-bold text-sm text-gray-800 truncate leading-tight group-hover:text-black transition-colors">{group.name}</div>
-                                                    <div className="text-[11px] text-gray-600 font-medium flex items-center gap-1"><Icon name="Users" size={12} className="text-gray-400" /> {taken ? <span className="font-bold text-emerald-700">{presentCount}/{group.players.length} Katıldı</span> : <span>{group.players.length} Oyuncu</span>}</div>
+                                                    <div className="text-[11px] text-gray-600 font-medium flex items-center gap-1"><Icon name="Users" size={12} className="text-gray-400" /> {taken ? <span className="font-bold text-emerald-700">{presentCount}/{playerCount} Katıldı</span> : <span>{playerCount} Oyuncu</span>}</div>
                                                     {taken && <div className="absolute top-2 right-2 w-3 h-3 bg-emerald-500 rounded-full ring-2 ring-white/50 shadow-sm"></div>}
                                                 </div>
                                             </div>
@@ -731,6 +733,8 @@
                             const time = (g.schedule && g.schedule.find(s => s.day === currentDayName)?.time) || "";
                             const { taken, presentCount } = getAttendanceInfo(g, selectedDate);
                             const borderClass = taken ? "border-emerald-500/50 shadow-emerald-100/50" : "border-white/50 shadow-sm";
+                            // GÜVENLİK: (g.players || []) yaparak boş grup hatasını engelledik
+                            const playerCount = (g.players || []).length;
                             return (
                                 <div key={g.id} onClick={() => setActiveGroup(g)} className={`glass-card rounded-3xl p-6 shadow-sm border hover:shadow-xl cursor-pointer relative group transition-all ${borderClass}`}>
                                     {taken && <div className="absolute top-3 left-3 bg-emerald-500 text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-sm tracking-wide">YOKLAMA ALINDI</div>}
@@ -739,7 +743,7 @@
                                     <div className="text-sm text-gray-500 mb-5 font-medium flex items-center gap-2"><Icon name="Calendar" size={14} className="text-gray-400"/> {currentDayName}</div>
                                     {userRole !== 'coach' && <div className="text-sm font-bold text-emerald-700 mb-5 flex items-center gap-2 bg-emerald-50/50 p-2 rounded-xl inline-block border border-emerald-100/50"><Icon name="UserSquare" size={16}/> {g.instructor}</div>}
                                     <div className="flex justify-between border-t border-gray-100/50 pt-4 text-sm text-gray-600 font-medium">
-                                        {taken ? <div className="text-emerald-700 font-bold flex items-center gap-2"><Icon name="CheckSquare" size={16}/> {presentCount}/{g.players.length} Katıldı</div> : <div className="flex items-center gap-2"><Icon name="Users" size={16} className="text-gray-400"/> {g.players.length} Oyuncu</div>}
+                                        {taken ? <div className="text-emerald-700 font-bold flex items-center gap-2"><Icon name="CheckSquare" size={16}/> {presentCount}/{playerCount} Katıldı</div> : <div className="flex items-center gap-2"><Icon name="Users" size={16} className="text-gray-400"/> {playerCount} Oyuncu</div>}
                                         <span className="font-bold text-emerald-600 flex items-center gap-1 group-hover:gap-2 transition-all">Detay <Icon name="ChevronRight" size={16}/></span>
                                     </div>
                                 </div>
@@ -790,8 +794,12 @@
                 // Beyaz Ekran Koruması (activeGroup.schedule &&)
                 const relevantSlot = activeGroup.schedule && activeGroup.schedule.find(s => s.day === currentDayName);
                 const recs = activeGroup.records[selectedDate] || {};
-                const presentCount = activeGroup.players.filter(p => recs[p.id] === 'present').length;
-                const absentCount = activeGroup.players.filter(p => recs[p.id] === 'absent').length;
+                
+                // GÜVENLİK: (activeGroup.players || []) yaparak çökmesini engelledik.
+                const safePlayers = activeGroup.players || [];
+                
+                const presentCount = safePlayers.filter(p => recs[p.id] === 'present').length;
+                const absentCount = safePlayers.filter(p => recs[p.id] === 'absent').length;
                 const canTakeAttendance = userRole === 'admin' || (userRole === 'coach' && currentCoach === activeGroup.instructor);
 
                 return (
@@ -800,7 +808,7 @@
                         <div className="p-5 bg-emerald-50/80 backdrop-blur-md border-b border-emerald-100/50 shadow-sm"><div className="flex justify-between items-center"><div><div className="font-black text-xl text-emerald-900 flex items-center gap-2 tracking-tight"><Icon name="UserSquare" size={24} className="text-emerald-700" /> {activeGroup.instructor}</div><div className="text-sm text-emerald-700 font-medium mt-1 flex gap-3"><span>{relevantSlot?.day}</span> • <span>{relevantSlot?.time}</span></div></div><div className="text-right p-3 bg-white/50 rounded-2xl border border-white/50 shadow-sm"><div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">KATILIM DURUMU</div><div className="flex gap-3 text-lg font-black"><span className="text-lime-600 flex items-center gap-1"><Icon name="CheckSquare" size={18}/> {presentCount}</span><span className="text-red-500 flex items-center gap-1"><Icon name="Square" size={18}/> {absentCount}</span></div></div></div></div>
                         {userRole === 'admin' && (<div className="p-4 bg-white/40 backdrop-blur-sm border-b border-white/30"><form onSubmit={handleAddPlayerFromDetail} className="space-y-3"><div className="text-xs font-bold text-gray-500 uppercase tracking-wider">HIZLI ÜYE EKLE</div><div className="flex gap-2"><input type="text" value={newStudentName} onChange={(e) => setNewStudentName(e.target.value)} placeholder="Ad Soyad..." className="flex-1 border-2 border-gray-200/80 p-3 rounded-2xl text-sm outline-none focus:border-emerald-500 bg-white/70 font-medium" /><input type="number" value={newStudentAge} onChange={(e) => setNewStudentAge(e.target.value)} placeholder="Yaş" className="w-20 border-2 border-gray-200/80 p-3 rounded-2xl text-sm outline-none focus:border-emerald-500 bg-white/70 font-medium" /><input type="tel" value={newStudentPhone} onChange={(e) => setNewStudentPhone(e.target.value)} placeholder="Tel" className="w-28 border-2 border-gray-200/80 p-3 rounded-2xl text-sm outline-none focus:border-emerald-500 bg-white/70 font-medium" /><button type="submit" className="bg-emerald-600 text-white px-4 rounded-2xl hover:bg-emerald-700 font-bold shadow-md"><Icon name="Plus" size={24}/></button></div></form></div>)}
                         <div className="flex-1 overflow-y-auto p-4 space-y-3 pb-36">
-                            {activeGroup.players.map(p => { 
+                            {safePlayers.map(p => { 
                                 const status = recs[p.id]; 
                                 return (
                                     <div key={p.id} onClick={() => setViewingProfileStudent(p)} className="flex items-center justify-between glass-card border-white/50 rounded-3xl p-4 shadow-sm hover:shadow-md transition-all cursor-pointer">
