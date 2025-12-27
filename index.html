@@ -387,6 +387,10 @@
 
         // --- ANA UYGULAMA BİLEŞENİ ---
         const App = () => {
+              if (!window.firebase || !window.firebaseDb) {
+    return <div style={{ padding: 20 }}>Yükleniyor...</div>;
+  }
+         
             const [userRole, setUserRole] = useState(() => { const saved = localStorage.getItem('dtk_session_v1'); return saved ? JSON.parse(saved).role : null; });
             const [currentCoach, setCurrentCoach] = useState(() => { const saved = localStorage.getItem('dtk_session_v1'); return saved ? JSON.parse(saved).name : null; });
             const [appLogo, setAppLogo] = useState("https://cdn-icons-png.flaticon.com/512/33/33736.png");
