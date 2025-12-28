@@ -49,9 +49,9 @@
             app = initializeApp(firebaseConfig);
             db = getFirestore(app);
             auth = getAuth(app);
-            console.log("Firebase ve Auth bağlantısı başarılı.");
+            console.log("Firebase Tam Sürüm Bağlantısı Başarılı.");
         } catch (error) {
-            console.error("Firebase başlatma hatası:", error);
+            console.error("Firebase Hatası:", error);
         }
 
         // Global Değişkenler
@@ -61,6 +61,7 @@
         window.firebaseUtils = {
             collection,
             doc,
+            getDoc,
             onSnapshot,
             updateDoc,
             setDoc,
@@ -68,12 +69,6 @@
             signInWithEmailAndPassword,
             signOut,
             onAuthStateChanged
-        };
-
-        window.firebase = {
-            setDoc,
-            deleteDoc,
-            updateDoc
         };
 
         // React'e haber ver
@@ -254,8 +249,7 @@
                         <h1 className="text-4xl font-black text-white text-center mb-2 drop-shadow-lg tracking-tight font-sport">Diyarbakır</h1>
                         <h2 className="text-xl font-bold text-lime-300 text-center mb-10 tracking-[0.2em] drop-shadow font-sport">TENİS KULÜBÜ</h2>
                         <div className="w-full space-y-4">
-                            <button onClick={onCoachClick} className="w-full bg-lime-500 hover:bg-lime-400 text-emerald-900 font-bold py-4 px-6 rounded-3xl transition-all transform hover:scale-[1.02] shadow-lg flex items-center justify-center gap-3 text-lg"><Icon name="UserSquare" size={24} /> ANTRENÖR GİRİŞİ</button>
-                            <button onClick={onAdminClick} className="w-full bg-lime-500 hover:bg-lime-400 text-black font-bold py-4 px-6 rounded-3xl transition-all transform hover:scale-[1.02] shadow-lg flex items-center justify-center gap-3 text-lg border-2 border-transparent"><Icon name="Lock" size={20} /> YÖNETİCİ GİRİŞİ</button>
+                            <button onClick={onCoachClick} className="w-full bg-lime-500 hover:bg-lime-400 text-emerald-900 font-bold py-4 px-6 rounded-3xl transition-all transform hover:scale-[1.02] shadow-lg flex items-center justify-center gap-3 text-lg"><Icon name="UserSquare" size={24} /> GİRİŞ YAP</button>
                         </div>
                         <p className="mt-10 text-white/70 text-xs font-medium">© 2025 DTK App v5.2 Premium</p>
                     </div>
@@ -422,7 +416,6 @@
 
         // --- ANA UYGULAMA BİLEŞENİ ---
         const App = () => {
-            // TÜM HOOK'LAR BURADA TANIMLANMALI - SIRASI DEĞİŞMEMELİ
             const [isFirebaseReady, setIsFirebaseReady] = useState(false);
             const [userRole, setUserRole] = useState(null); // Admin veya Coach
             const [authUser, setAuthUser] = useState(null); // Firebase kullanıcısı
@@ -468,23 +461,29 @@
                 }
                 window.addEventListener('firebase-ready', handleReady);
                 
-                // Auth Listener (Oturum durumunu dinle)
+                // Auth Listener (Oturum durumunu dinle ve ROLE KONTROLÜ YAP)
                 if (window.firebaseUtils) {
-                    const { onAuthStateChanged } = window.firebaseUtils;
-                    const { firebaseAuth } = window;
-                    onAuthStateChanged(firebaseAuth, (user) => {
+                    const { onAuthStateChanged, getDoc, doc } = window.firebaseUtils;
+                    const { firebaseAuth, firebaseDb } = window;
+                    onAuthStateChanged(firebaseAuth, async (user) => {
                         setAuthUser(user);
                         if (user) {
-                            // Basit rol belirleme (email üzerinden)
-                            if (user.email === 'admin@dtk.com') { // Admin mailini buraya yaz
-                                setUserRole('admin');
-                            } else {
-                                setUserRole('coach');
-                                // Hoca ismini bulmaya çalış (emailden)
-                                // Burada definedCoaches içinden eşleşeni bulacağız ama 
-                                // data fetch edildikten sonra yapmak daha sağlıklı.
-                                // Şimdilik basitçe mailin başını alalım veya boş bırakalım.
-                                setCurrentCoach(user.email.split('@')[0]); 
+                            // Firestore'dan rolü kontrol et
+                            try {
+                                const userRef = doc(firebaseDb, "users", user.email);
+                                const userSnap = await getDoc(userRef);
+                                
+                                if (userSnap.exists() && userSnap.data().role === 'admin') {
+                                    setUserRole('admin');
+                                } else {
+                                    setUserRole('coach');
+                                    // ÖNEMLİ: Hocanın ismini e-postadan bul
+                                    // Coaches verisini beklemeden önce basitçe set et, sonra güncellenir
+                                    setCurrentCoach(user.email.split('@')[0]);
+                                }
+                            } catch (e) {
+                                console.error("Rol okuma hatası:", e);
+                                setUserRole('coach'); // Hata durumunda varsayılan coach
                             }
                         } else {
                             setUserRole(null);
@@ -565,6 +564,16 @@
                     unsubscribers.forEach(unsub => unsub());
                 };
             }, [isFirebaseReady, authUser]);
+
+            // HOCA İSMİNİ EŞLEŞTİRME (Yusuf hoca veriyi görsün diye)
+            useEffect(() => {
+                if (userRole === 'coach' && authUser && definedCoaches.length > 0) {
+                    const matchedCoach = definedCoaches.find(c => c.email === authUser.email);
+                    if (matchedCoach) {
+                        setCurrentCoach(matchedCoach.name); // Veritabanındaki tam ismi al (Örn: "Yusuf Hoca")
+                    }
+                }
+            }, [userRole, authUser, definedCoaches]);
 
             // Yardımcı Fonksiyonlar (Hooks dışı)
             const validHours = ["11:00", "12:00", "13:00", "14:00", "15:00", "16:00"];
@@ -679,15 +688,15 @@
                         <div className="glass-modal rounded-[32px] shadow-2xl w-full max-w-sm overflow-hidden p-8 relative border-t-white/50">
                             <button onClick={() => setLoginModalType(null)} className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 font-bold p-2 bg-white/30 rounded-full transition-colors">✕</button>
                             <div className="text-center">
-                                <div className={`bg-${loginModalType === 'admin' ? 'emerald' : 'lime'}-100/80 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm ring-4 ring-white/50`}>
-                                    <Icon name={loginModalType === 'admin' ? 'Lock' : 'UserSquare'} size={36} className={`text-${loginModalType === 'admin' ? 'emerald' : 'lime'}-700`}/>
+                                <div className="bg-lime-100/80 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm ring-4 ring-white/50">
+                                    <Icon name="UserSquare" size={36} className="text-lime-700"/>
                                 </div>
-                                <h2 className="text-2xl font-black text-gray-800 mb-6 tracking-tight">{loginModalType === 'admin' ? 'Yönetici' : 'Antrenör'} Girişi</h2>
+                                <h2 className="text-2xl font-black text-gray-800 mb-6 tracking-tight">Güvenli Giriş</h2>
                                 <form onSubmit={handleSecureLogin} className="space-y-4">
                                     <input type="email" required autoFocus className="w-full border-2 border-gray-200/80 rounded-2xl p-4 outline-none focus:border-emerald-500 bg-white/70 font-medium text-gray-700 transition-all focus:bg-white" placeholder="E-posta Adresi" value={email} onChange={e => setEmail(e.target.value)} />
                                     <input type="password" required className="w-full border-2 border-gray-200/80 rounded-2xl p-4 outline-none focus:border-emerald-500 bg-white/70 font-medium text-gray-700 transition-all focus:bg-white" placeholder="Şifre" value={password} onChange={e => setPassword(e.target.value)} />
                                     {error && <p className="text-red-500 text-sm font-medium bg-red-50 p-2 rounded-lg">{error}</p>}
-                                    <button className={`w-full bg-${loginModalType === 'admin' ? 'emerald' : 'lime'}-600 text-white py-4 rounded-2xl font-bold hover:opacity-90 transition-colors shadow-lg text-lg`}>Giriş Yap</button>
+                                    <button className="w-full bg-lime-500 text-white py-4 rounded-2xl font-bold hover:opacity-90 transition-colors shadow-lg text-lg">Giriş Yap</button>
                                 </form>
                             </div>
                         </div>
@@ -768,8 +777,15 @@
                 const currentDayName = getDayNameFromDate(selectedDate);
                 // Beyaz Ekran Koruması (g.schedule &&)
                 let filtered = dailyGroups.filter(g => g.schedule && g.schedule.some(s => s.day === currentDayName));
-                if (userRole === 'coach') filtered = filtered.filter(g => g.instructor === currentCoach);
-                if (filtered.length === 0) return <div className="text-center py-20 text-gray-400/80 border-2 border-dashed border-gray-300/50 m-4 rounded-3xl font-medium glass-card">Bugün için ders programı bulunmuyor.</div>;
+                
+                // --- KRİTİK DÜZELTME: İSİM EŞLEŞTİRME ---
+                if (userRole === 'coach' && currentCoach) {
+                    filtered = filtered.filter(g => g.instructor === currentCoach);
+                }
+                
+                if (filtered.length === 0) return <div className="text-center py-20 text-gray-400/80 border-2 border-dashed border-gray-300/50 m-4 rounded-3xl font-medium glass-card">
+                    {userRole === 'coach' ? `Bugün için ders programı bulunmuyor (${currentCoach})` : 'Bugün için ders programı bulunmuyor.'}
+                </div>;
 
                 return (
                     <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 pb-36">
