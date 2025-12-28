@@ -11,11 +11,71 @@
     <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-tennis-court min-h-screen"> 
     <div id="root"></div>
-    <script type="module" src="/firebase.js"></script>
+
+    <script type="module">
+        // Firebase Modüllerini CDN üzerinden çekiyoruz
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { 
+            getFirestore, 
+            collection, 
+            doc, 
+            getDoc, 
+            getDocs, 
+            setDoc, 
+            updateDoc, 
+            deleteDoc, 
+            onSnapshot 
+        } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+        // SENİN GÖNDERDİĞİN BİLGİLER BURAYA EKLENDİ
+        const firebaseConfig = {
+            apiKey: "AIzaSyCsOde5aNv6HnNJMXtPLlGisXF_zXp3E5o",
+            authDomain: "diyarbakirtenis-254b1.firebaseapp.com",
+            databaseURL: "https://diyarbakirtenis-254b1-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "diyarbakirtenis-254b1",
+            storageBucket: "diyarbakirtenis-254b1.firebasestorage.app",
+            messagingSenderId: "664290250808",
+            appId: "1:664290250808:web:bd0ff27083ea50f145d6cd",
+            measurementId: "G-LL1R6KD89Q"
+        };
+
+        // Uygulamayı başlat
+        let app, db;
+        try {
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            console.log("Firebase bağlantısı başarılı: diyarbakirtenis-254b1");
+        } catch (error) {
+            console.error("Firebase başlatma hatası:", error);
+            alert("Veritabanı bağlantı hatası! İnternet bağlantınızı kontrol edin.");
+        }
+
+        // React kodunun kullanacağı global değişkenleri tanımlıyoruz
+        window.firebaseDb = db;
+        
+        window.firebaseUtils = {
+            collection,
+            doc,
+            onSnapshot,
+            updateDoc,
+            setDoc,
+            deleteDoc
+        };
+
+        window.firebase = {
+            setDoc,
+            deleteDoc,
+            updateDoc
+        };
+
+        // React uygulamasının veritabanının hazır olduğunu anlaması için olay tetikle
+        window.dispatchEvent(new Event('firebase-ready'));
+    </script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Righteous&display=swap');
@@ -31,9 +91,9 @@
         .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         .animate-slide-up { animation: slideUp 0.5s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         
         .bg-tennis-court {
-            
             background-color: #f0fdf4;
         }
         .glass-card {
@@ -277,7 +337,7 @@
                                     const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
                                     const record = detailedRecords.find(r => r.date === dateStr);
                                     const status = record ? record.status : null;
-                                    return <div key={d} className="aspect-square flex items-center justify-center rounded-xl font-bold text-sm border-2 border-transparent relative overflow-hidden ${!status ? 'text-gray-400' : 'text-gray-800'}"><span className="z-10">{d}</span>{status==='present'&&<div className="absolute inset-0 bg-lime-400 rounded-xl border-2 border-lime-500 opacity-80"></div>}{status==='absent'&&<div className="absolute inset-0 bg-red-400 rounded-xl border-2 border-red-500 opacity-80"></div>}</div>
+                                    return <div key={d} className={`aspect-square flex items-center justify-center rounded-xl font-bold text-sm border-2 border-transparent relative overflow-hidden ${!status ? 'text-gray-400' : 'text-gray-800'}`}><span className="z-10">{d}</span>{status==='present'&&<div className="absolute inset-0 bg-lime-400 rounded-xl border-2 border-lime-500 opacity-80"></div>}{status==='absent'&&<div className="absolute inset-0 bg-red-400 rounded-xl border-2 border-red-500 opacity-80"></div>}</div>
                                 })}
                             </div>
                             <div className="space-y-2 border-t border-gray-200/50 pt-4">
@@ -385,9 +445,30 @@
 
         // --- ANA UYGULAMA BİLEŞENİ ---
         const App = () => {
-              if (!window.firebaseUtils || !window.firebaseDb) {
-    return <div style={{ padding: 20 }}>Yükleniyor...</div>;
-  }
+            const [isFirebaseReady, setIsFirebaseReady] = useState(false);
+
+            useEffect(() => {
+                // Eğer firebase zaten hazırsa (script React'ten önce çalıştıysa)
+                if (window.firebaseUtils && window.firebaseDb) {
+                    setIsFirebaseReady(true);
+                }
+
+                // Event listener ekle (React önce çalışırsa script'in bitmesini bekle)
+                const handleReady = () => setIsFirebaseReady(true);
+                window.addEventListener('firebase-ready', handleReady);
+                return () => window.removeEventListener('firebase-ready', handleReady);
+            }, []);
+
+            if (!isFirebaseReady) {
+                return (
+                    <div className="min-h-screen bg-tennis-court flex items-center justify-center">
+                        <div className="text-emerald-800 font-bold text-xl animate-pulse flex flex-col items-center gap-4">
+                            <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+                            Yükleniyor...
+                        </div>
+                    </div>
+                );
+            }
          
             const [userRole, setUserRole] = useState(() => { const saved = localStorage.getItem('dtk_session_v1'); return saved ? JSON.parse(saved).role : null; });
             const [currentCoach, setCurrentCoach] = useState(() => { const saved = localStorage.getItem('dtk_session_v1'); return saved ? JSON.parse(saved).name : null; });
@@ -432,50 +513,52 @@
             useEffect(() => {
                 const unsubscribers = [];
 
-                const groupsRef = window.firebaseUtils.collection(window.firebaseDb, 'groups');
-                const unsubGroups = window.firebaseUtils.onSnapshot(groupsRef, (snapshot) => {
-                    const groupsData = [];
-                    snapshot.forEach((doc) => {
-                        groupsData.push({ ...doc.data(), id: doc.id });
+                if(window.firebaseUtils && window.firebaseDb) {
+                    const groupsRef = window.firebaseUtils.collection(window.firebaseDb, 'groups');
+                    const unsubGroups = window.firebaseUtils.onSnapshot(groupsRef, (snapshot) => {
+                        const groupsData = [];
+                        snapshot.forEach((doc) => {
+                            groupsData.push({ ...doc.data(), id: doc.id });
+                        });
+                        setGroups(groupsData);
                     });
-                    setGroups(groupsData);
-                });
-                unsubscribers.push(unsubGroups);
+                    unsubscribers.push(unsubGroups);
 
-                const coachesRef = window.firebaseUtils.collection(window.firebaseDb, 'coaches');
-                const unsubCoaches = window.firebaseUtils.onSnapshot(coachesRef, (snapshot) => {
-                    const coachesData = [];
-                    snapshot.forEach((doc) => {
-                        coachesData.push({ ...doc.data(), id: doc.id });
+                    const coachesRef = window.firebaseUtils.collection(window.firebaseDb, 'coaches');
+                    const unsubCoaches = window.firebaseUtils.onSnapshot(coachesRef, (snapshot) => {
+                        const coachesData = [];
+                        snapshot.forEach((doc) => {
+                            coachesData.push({ ...doc.data(), id: doc.id });
+                        });
+                        setDefinedCoaches(coachesData.length > 0 ? coachesData : [{ id: 1, name: "Mert Hoca", email: "mert@dtk.com", password: "123" }, { id: 2, name: "Selin Hoca", email: "selin@dtk.com", password: null }]);
                     });
-                    setDefinedCoaches(coachesData.length > 0 ? coachesData : [{ id: 1, name: "Mert Hoca", email: "mert@dtk.com", password: "123" }, { id: 2, name: "Selin Hoca", email: "selin@dtk.com", password: null }]);
-                });
-                unsubscribers.push(unsubCoaches);
+                    unsubscribers.push(unsubCoaches);
 
-                const studentsRef = window.firebaseUtils.collection(window.firebaseDb, 'students');
-                const unsubStudents = window.firebaseUtils.onSnapshot(studentsRef, (snapshot) => {
-                    const studentsData = [];
-                    snapshot.forEach((doc) => {
-                        studentsData.push({ ...doc.data(), id: doc.id });
+                    const studentsRef = window.firebaseUtils.collection(window.firebaseDb, 'students');
+                    const unsubStudents = window.firebaseUtils.onSnapshot(studentsRef, (snapshot) => {
+                        const studentsData = [];
+                        snapshot.forEach((doc) => {
+                            studentsData.push({ ...doc.data(), id: doc.id });
+                        });
+                        setRegisteredStudents(studentsData);
                     });
-                    setRegisteredStudents(studentsData);
-                });
-                unsubscribers.push(unsubStudents);
+                    unsubscribers.push(unsubStudents);
 
-                const settingsRef = window.firebaseUtils.doc(window.firebaseDb, 'settings', 'app');
-                const unsubSettings = window.firebaseUtils.onSnapshot(settingsRef, (doc) => {
-                    if (doc.exists()) {
-                        const data = doc.data();
-                        if (data.logo) setAppLogo(data.logo);
-                        if (data.adminPassword) setAdminPassword(data.adminPassword);
-                    }
-                });
-                unsubscribers.push(unsubSettings);
+                    const settingsRef = window.firebaseUtils.doc(window.firebaseDb, 'settings', 'app');
+                    const unsubSettings = window.firebaseUtils.onSnapshot(settingsRef, (doc) => {
+                        if (doc.exists()) {
+                            const data = doc.data();
+                            if (data.logo) setAppLogo(data.logo);
+                            if (data.adminPassword) setAdminPassword(data.adminPassword);
+                        }
+                    });
+                    unsubscribers.push(unsubSettings);
+                }
 
                 return () => {
                     unsubscribers.forEach(unsub => unsub());
                 };
-            }, []);
+            }, [isFirebaseReady]);
 
             const validHours = ["11:00", "12:00", "13:00", "14:00", "15:00", "16:00"];
             const askConfirmation = (message, action) => { setConfirmModal({ isOpen: true, message, onConfirm: action }); };
