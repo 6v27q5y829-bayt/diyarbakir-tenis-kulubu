@@ -19,6 +19,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
         import { 
             getFirestore, 
             collection, 
@@ -31,7 +32,7 @@
             onSnapshot 
         } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-        // SİZİN DOĞRU VERİTABANI BİLGİLERİNİZ
+        // SENİN VERİTABANI BİLGİLERİN
         const firebaseConfig = {
             apiKey: "AIzaSyCsOde5aNv6HnNJMXtPLlGisXF_zXp3E5o",
             authDomain: "diyarbakirtenis-254b1.firebaseapp.com",
@@ -43,18 +44,37 @@
             measurementId: "G-LL1R6KD89Q"
         };
 
-        let app, db;
+        let app, db, auth;
         try {
             app = initializeApp(firebaseConfig);
             db = getFirestore(app);
-            console.log("Firebase bağlantısı başarılı.");
+            auth = getAuth(app);
+            console.log("Firebase ve Auth bağlantısı başarılı.");
         } catch (error) {
-            console.error("Firebase hatası:", error);
+            console.error("Firebase başlatma hatası:", error);
         }
 
+        // Global Değişkenler
         window.firebaseDb = db;
-        window.firebaseUtils = { collection, doc, onSnapshot, updateDoc, setDoc, deleteDoc };
-        window.firebase = { setDoc, deleteDoc, updateDoc };
+        window.firebaseAuth = auth;
+        
+        window.firebaseUtils = {
+            collection,
+            doc,
+            onSnapshot,
+            updateDoc,
+            setDoc,
+            deleteDoc,
+            signInWithEmailAndPassword,
+            signOut,
+            onAuthStateChanged
+        };
+
+        window.firebase = {
+            setDoc,
+            deleteDoc,
+            updateDoc
+        };
 
         // React'e haber ver
         window.dispatchEvent(new Event('firebase-ready'));
@@ -62,8 +82,10 @@
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Righteous&display=swap');
+        
         body { font-family: 'Inter', sans-serif; background-color: #f0fdf4; }
         .font-sport { font-family: 'Righteous', cursive; }
+        
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .logo-container { width: 40px; height: 40px; overflow: hidden; border-radius: 50%; border: 2px solid #bef264; position: relative; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
@@ -72,6 +94,7 @@
         .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         .animate-slide-up { animation: slideUp 0.5s ease-out forwards; }
+        
         .bg-tennis-court { background-color: #f0fdf4; }
         .glass-card { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.3); box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07); }
         .glass-modal { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.2); }
@@ -82,9 +105,10 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
 
+        // --- İKONLAR ---
         const icons = {
             ChartPie: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>,
-            Settings: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>,
+            Settings: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>,
             Key: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>,
             Camera: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>,
             UserCheck: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>,
@@ -400,14 +424,13 @@
         const App = () => {
             // TÜM HOOK'LAR BURADA TANIMLANMALI - SIRASI DEĞİŞMEMELİ
             const [isFirebaseReady, setIsFirebaseReady] = useState(false);
-            const [userRole, setUserRole] = useState(() => { const saved = localStorage.getItem('dtk_session_v1'); return saved ? JSON.parse(saved).role : null; });
-            const [currentCoach, setCurrentCoach] = useState(() => { const saved = localStorage.getItem('dtk_session_v1'); return saved ? JSON.parse(saved).name : null; });
+            const [userRole, setUserRole] = useState(null); // Admin veya Coach
+            const [authUser, setAuthUser] = useState(null); // Firebase kullanıcısı
+            const [currentCoach, setCurrentCoach] = useState(null);
             const [appLogo, setAppLogo] = useState("https://cdn-icons-png.flaticon.com/512/33/33736.png");
-            const [adminPassword, setAdminPassword] = useState("2121");
             const [loginModalType, setLoginModalType] = useState(null);
             const [confirmModal, setConfirmModal] = useState({ isOpen: false, message: '', onConfirm: null });
             const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-            const [changePassData, setChangePassData] = useState({ current: '', new: '', confirm: '' });
             const [selectedDate, setSelectedDate] = useState(() => { const today = new Date(); const offset = today.getTimezoneOffset(); const localDate = new Date(today.getTime() - (offset * 60 * 1000)); return localDate.toISOString().split('T')[0]; });
             const [groups, setGroups] = useState([]);
             const [definedCoaches, setDefinedCoaches] = useState([]);
@@ -439,24 +462,58 @@
 
             // Firebase Hazırlık Hook'u
             useEffect(() => {
+                const handleReady = () => setIsFirebaseReady(true);
                 if (window.firebaseUtils && window.firebaseDb) {
                     setIsFirebaseReady(true);
                 }
-                const handleReady = () => setIsFirebaseReady(true);
                 window.addEventListener('firebase-ready', handleReady);
+                
+                // Auth Listener (Oturum durumunu dinle)
+                if (window.firebaseUtils) {
+                    const { onAuthStateChanged } = window.firebaseUtils;
+                    const { firebaseAuth } = window;
+                    onAuthStateChanged(firebaseAuth, (user) => {
+                        setAuthUser(user);
+                        if (user) {
+                            // Basit rol belirleme (email üzerinden)
+                            if (user.email === 'admin@dtk.com') { // Admin mailini buraya yaz
+                                setUserRole('admin');
+                            } else {
+                                setUserRole('coach');
+                                // Hoca ismini bulmaya çalış (emailden)
+                                // Burada definedCoaches içinden eşleşeni bulacağız ama 
+                                // data fetch edildikten sonra yapmak daha sağlıklı.
+                                // Şimdilik basitçe mailin başını alalım veya boş bırakalım.
+                                setCurrentCoach(user.email.split('@')[0]); 
+                            }
+                        } else {
+                            setUserRole(null);
+                        }
+                    });
+                }
+
                 return () => window.removeEventListener('firebase-ready', handleReady);
             }, []);
 
-            // Veri Çekme Hook'u
+            // Veri Çekme Hook'u (Auth olduktan sonra çalışır)
             useEffect(() => {
                 const unsubscribers = [];
 
-                if(window.firebaseUtils && window.firebaseDb) {
+                if(window.firebaseUtils && window.firebaseDb && authUser) { // Sadece giriş yapıldıysa
                     const groupsRef = window.firebaseUtils.collection(window.firebaseDb, 'groups');
                     const unsubGroups = window.firebaseUtils.onSnapshot(groupsRef, (snapshot) => {
                         const groupsData = [];
                         snapshot.forEach((doc) => {
-                            groupsData.push({ ...doc.data(), id: doc.id });
+                            const d = doc.data();
+                            // Esnek veri eşleştirme
+                            groupsData.push({ 
+                                ...d, 
+                                id: doc.id,
+                                name: d.name || d.grupAdi || "İsimsiz",
+                                instructor: d.instructor || d.antrenor || "Bilinmiyor",
+                                players: d.players || d.ogrenciler || [],
+                                records: d.records || {}
+                            });
                         });
                         setGroups(groupsData);
                     });
@@ -466,9 +523,15 @@
                     const unsubCoaches = window.firebaseUtils.onSnapshot(coachesRef, (snapshot) => {
                         const coachesData = [];
                         snapshot.forEach((doc) => {
-                            coachesData.push({ ...doc.data(), id: doc.id });
+                            const d = doc.data();
+                            coachesData.push({ 
+                                ...d, 
+                                id: doc.id,
+                                name: d.name || d.ad_soyad || "Hoca",
+                                email: d.email || d.mail
+                            });
                         });
-                        setDefinedCoaches(coachesData.length > 0 ? coachesData : [{ id: 1, name: "Mert Hoca", email: "mert@dtk.com", password: "123" }, { id: 2, name: "Selin Hoca", email: "selin@dtk.com", password: null }]);
+                        setDefinedCoaches(coachesData);
                     });
                     unsubscribers.push(unsubCoaches);
 
@@ -476,7 +539,13 @@
                     const unsubStudents = window.firebaseUtils.onSnapshot(studentsRef, (snapshot) => {
                         const studentsData = [];
                         snapshot.forEach((doc) => {
-                            studentsData.push({ ...doc.data(), id: doc.id });
+                            const d = doc.data();
+                            studentsData.push({ 
+                                ...d, 
+                                id: doc.id,
+                                name: d.name || d.ad_soyad || "İsimsiz",
+                                phone: d.phone || d.tel 
+                            });
                         });
                         setRegisteredStudents(studentsData);
                     });
@@ -487,7 +556,6 @@
                         if (doc.exists()) {
                             const data = doc.data();
                             if (data.logo) setAppLogo(data.logo);
-                            if (data.adminPassword) setAdminPassword(data.adminPassword);
                         }
                     });
                     unsubscribers.push(unsubSettings);
@@ -496,18 +564,28 @@
                 return () => {
                     unsubscribers.forEach(unsub => unsub());
                 };
-            }, [isFirebaseReady]);
+            }, [isFirebaseReady, authUser]);
 
             // Yardımcı Fonksiyonlar (Hooks dışı)
             const validHours = ["11:00", "12:00", "13:00", "14:00", "15:00", "16:00"];
             const askConfirmation = (message, action) => { setConfirmModal({ isOpen: true, message, onConfirm: action }); };
             const closeConfirmModal = () => { setConfirmModal({ isOpen: false, message: '', onConfirm: null }); };
             const executeConfirm = () => { if (confirmModal.onConfirm) confirmModal.onConfirm(); closeConfirmModal(); };
-            const handleLogout = () => { setUserRole(null); setCurrentCoach(null); setActiveGroup(null); localStorage.removeItem('dtk_session_v1'); };
-            const handleLogoUpdate = async (newLogo) => { const settingsRef = window.firebaseUtils.doc(window.firebaseDb, 'settings', 'app'); await window.firebase.setDoc(settingsRef, { logo: newLogo, adminPassword: adminPassword }, { merge: true }); };
+            
+            // GÜVENLİ ÇIKIŞ
+            const handleLogout = async () => { 
+                const { signOut } = window.firebaseUtils;
+                const { firebaseAuth } = window;
+                await signOut(firebaseAuth);
+                setUserRole(null); 
+                setCurrentCoach(null); 
+                setActiveGroup(null); 
+            };
+
+            const handleLogoUpdate = async (newLogo) => { const settingsRef = window.firebaseUtils.doc(window.firebaseDb, 'settings', 'app'); await window.firebase.setDoc(settingsRef, { logo: newLogo }, { merge: true }); };
             const addScheduleSlot = () => { const exists = tempSchedule.some(s => s.day === tempDay && s.time === tempTime); if(!exists) setTempSchedule([...tempSchedule, {day: tempDay, time: tempTime}]); };
             const removeScheduleSlot = (idx) => setTempSchedule(tempSchedule.filter((_, i) => i !== idx));
-            const openEditGroupModal = (group, e) => { e.stopPropagation(); setEditingGroup(group); setNewGroupName(group.name); setNewCoachName(group.instructor); setTempSchedule(group.schedule); setIsModalOpen(true); };
+            const openEditGroupModal = (group, e) => { e.stopPropagation(); setEditingGroup(group); setNewGroupName(group.name); setNewCoachName(group.instructor); setTempSchedule(group.schedule || []); setIsModalOpen(true); };
             
             const handleSaveGroup = async (e) => { 
                 e.preventDefault(); 
@@ -523,7 +601,7 @@
                 setIsModalOpen(false); setEditingGroup(null); setNewGroupName(""); setNewCoachName(""); setTempSchedule([]); 
             };
             
-            const handleAddCoach = async (e) => { e.preventDefault(); if (definedCoaches.some(i => i.email === newInstEmail)) { alert("Bu e-posta zaten kayıtlı."); return; } const newInst = { id: Date.now(), name: newInstName, email: newInstEmail, password: null }; const coachRef = window.firebaseUtils.doc(window.firebaseDb, 'coaches', newInst.id.toString()); await window.firebase.setDoc(coachRef, newInst); setIsCoachModalOpen(false); setNewInstName(""); setNewInstEmail(""); alert("Antrenör başarıyla eklendi."); };
+            const handleAddCoach = async (e) => { e.preventDefault(); if (definedCoaches.some(i => i.email === newInstEmail)) { alert("Bu e-posta zaten kayıtlı."); return; } const newInst = { id: Date.now(), name: newInstName, email: newInstEmail }; const coachRef = window.firebaseUtils.doc(window.firebaseDb, 'coaches', newInst.id.toString()); await window.firebase.setDoc(coachRef, newInst); setIsCoachModalOpen(false); setNewInstName(""); setNewInstEmail(""); alert("Antrenör veritabanına eklendi (Giriş için Firebase Authentication kullanın)."); };
             const handleDeleteGroup = (id, e) => { if(e) e.stopPropagation(); askConfirmation("Bu grubu ve içindeki tüm ders programını silmek istediğinize emin misiniz?", async () => { const groupRef = window.firebaseUtils.doc(window.firebaseDb, 'groups', id.toString()); await window.firebase.deleteDoc(groupRef); }); };
             const addPlayerLogic = async (targetGroupId, studentName, studentId = null, studentAge = "", studentPhone = "", studentPhoto = null) => { const newId = studentId || Date.now(); const newPlayer = { id: newId, name: studentName, age: studentAge, phone: studentPhone, photo: studentPhoto }; const targetGroup = groups.find(g => g.id.toString() === targetGroupId.toString()); if (targetGroup && !targetGroup.players.some(p => p.name === studentName)) { const groupRef = window.firebaseUtils.doc(window.firebaseDb, 'groups', targetGroupId.toString()); await window.firebaseUtils.updateDoc(groupRef, { players: [...targetGroup.players, newPlayer] }); } if(!registeredStudents.some(rs => rs.id === newId)) { const studentRef = window.firebaseUtils.doc(window.firebaseDb, 'students', newId.toString()); await window.firebase.setDoc(studentRef, newPlayer); } };
             const handleRemovePlayerFromGroup = (groupId, playerId) => { askConfirmation("Bu öğrenciyi gruptan çıkarmak istediğinize emin misiniz?", async () => { const targetGroup = groups.find(g => g.id === groupId); if (targetGroup) { const groupRef = window.firebaseUtils.doc(window.firebaseDb, 'groups', groupId.toString()); await window.firebaseUtils.updateDoc(groupRef, { players: targetGroup.players.filter(p => p.id !== playerId) }); if(activeGroup && activeGroup.id === groupId) setActiveGroup({ ...targetGroup, players: targetGroup.players.filter(p => p.id !== playerId) }); } }); };
@@ -566,65 +644,52 @@
             const handleToggleSelection = (id) => { if (selectedMemberIds.includes(id)) setSelectedMemberIds(selectedMemberIds.filter(sid => sid !== id)); else setSelectedMemberIds([...selectedMemberIds, id]); };
             const handleAddMultipleExistingStudents = async (e) => { e.preventDefault(); if (!targetGroupForAdd || selectedMemberIds.length === 0) return; const newPlayers = [...targetGroupForAdd.players]; selectedMemberIds.forEach(sid => { const student = registeredStudents.find(s => s.id === sid); if(student && !newPlayers.some(p => p.id === sid)) newPlayers.push(student); }); const groupRef = window.firebaseUtils.doc(window.firebaseDb, 'groups', targetGroupForAdd.id.toString()); await window.firebaseUtils.updateDoc(groupRef, { players: newPlayers }); setIsAddExistingStudentModalOpen(false); setSelectedMemberIds([]); setTargetGroupForAdd(null); };
             const handleDeleteCoach = (id) => { const inst = definedCoaches.find(i => i.id === id); if (!inst) return; const assignedGroups = groups.filter(g => g.instructor === inst.name); const confirmMessage = assignedGroups.length > 0 ? `Bu antrenörün yönettiği ${assignedGroups.length} grup var. Silinirse gruplar antrenörsüz kalacak.` : `${inst.name} adlı antrenörü silmek istediğinize emin misiniz?`; askConfirmation(confirmMessage, async () => { const coachRef = window.firebaseUtils.doc(window.firebaseDb, 'coaches', id.toString()); await window.firebase.deleteDoc(coachRef); }); };
-            const handleResetCoachPassword = (id) => { askConfirmation("Bu antrenörün şifresini '1234' olarak sıfırlamak istediğinize emin misiniz?", async () => { const coachRef = window.firebaseUtils.doc(window.firebaseDb, 'coaches', id.toString()); await window.firebaseUtils.updateDoc(coachRef, { password: "1234" }); alert("Şifre '1234' olarak sıfırlandı."); }); };
+            
             const handleDeleteStudentFromRegistry = (studentId) => { askConfirmation("Bu öğrenciyi sistemden silerseniz, dahil olduğu tüm gruplardan da çıkarılacaktır.", async () => { const affectedGroups = groups.filter(g => g.players.some(p => p.id === studentId)); for (const group of affectedGroups) { const groupRef = window.firebaseUtils.doc(window.firebaseDb, 'groups', group.id.toString()); await window.firebaseUtils.updateDoc(groupRef, { players: group.players.filter(p => p.id !== studentId) }); } const studentRef = window.firebaseUtils.doc(window.firebaseDb, 'students', studentId.toString()); await window.firebase.deleteDoc(studentRef); }); };
-            const handleChangeAdminPassword = (e) => { e.preventDefault(); if(changePassData.current !== adminPassword) { alert("Mevcut şifre yanlış!"); return; } if(changePassData.new.length < 4) { alert("Yeni şifre en az 4 karakter olmalı."); return; } if(changePassData.new !== changePassData.confirm) { alert("Yeni şifreler uyuşmuyor."); return; } askConfirmation("Yönetici şifresini değiştirmek istediğinize emin misiniz?", async () => { const settingsRef = window.firebaseUtils.doc(window.firebaseDb, 'settings', 'app'); await window.firebase.setDoc(settingsRef, { adminPassword: changePassData.new, logo: appLogo }, { merge: true }); setIsSettingsOpen(false); setChangePassData({ current: '', new: '', confirm: '' }); alert("Şifreniz başarıyla değiştirildi."); }); };
+            
             const getAttendanceInfo = (group, date) => { const recs = group.records[date]; if (!recs) return { taken: false, presentCount: 0 }; const taken = Object.keys(recs).length > 0; const presentCount = Object.values(recs).filter(s => s === 'present').length; return { taken, presentCount }; };
             const toggleAttendance = async (playerId, status) => { const targetGroup = groups.find(g => g.id === activeGroup.id); if (targetGroup) { const recs = targetGroup.records[selectedDate] || {}; const newStatus = recs[playerId] === status ? null : status; const updatedRecords = { ...targetGroup.records, [selectedDate]: { ...recs, [playerId]: newStatus } }; const groupRef = window.firebaseUtils.doc(window.firebaseDb, 'groups', activeGroup.id.toString()); await window.firebaseUtils.updateDoc(groupRef, { records: updatedRecords }); if(activeGroup) setActiveGroup({ ...targetGroup, records: updatedRecords }); } };
 
             const LoginPopup = () => {
-                const [step, setStep] = useState('email'); const [email, setEmail] = useState(""); const [password, setPassword] = useState(""); const [confirmPass, setConfirmPass] = useState(""); const [error, setError] = useState(""); const [foundInst, setFoundInst] = useState(null);
-                useEffect(() => { if(loginModalType) { setStep('email'); setEmail(""); setPassword(""); setConfirmPass(""); setError(""); setFoundInst(null); } }, [loginModalType]);
-                const handleAdminLogin = (e) => { e.preventDefault(); if (password === adminPassword) { setUserRole('admin'); setLoginModalType(null); setAdminTab('schedule'); localStorage.setItem('dtk_session_v1', JSON.stringify({ role: 'admin' })); } else setError("Hatalı şifre!"); };
-                const checkEmail = (e) => { e.preventDefault(); const inst = definedCoaches.find(i => i.email === email); if (inst) { setFoundInst(inst); if (inst.password) setStep('password'); else setStep('set-password'); setError(""); } else setError("Kayıtlı antrenör bulunamadı."); };
-                const verifyPassword = (e) => { e.preventDefault(); if (foundInst.password === password) { setUserRole('coach'); setCurrentCoach(foundInst.name); setLoginModalType(null); localStorage.setItem('dtk_session_v1', JSON.stringify({ role: 'coach', name: foundInst.name })); } else setError("Şifre yanlış."); };
-                const setNewPassword = async (e) => { e.preventDefault(); if (password.length < 4) { setError("Şifre en az 4 karakter olmalı."); return; } if (password !== confirmPass) { setError("Şifreler uyuşmuyor."); return; } const coachRef = window.firebaseUtils.doc(window.firebaseDb, 'coaches', foundInst.id.toString()); await window.firebaseUtils.updateDoc(coachRef, { password: password }); setUserRole('coach'); setCurrentCoach(foundInst.name); setLoginModalType(null); localStorage.setItem('dtk_session_v1', JSON.stringify({ role: 'coach', name: foundInst.name })); };
+                const [email, setEmail] = useState(""); 
+                const [password, setPassword] = useState(""); 
+                const [error, setError] = useState(""); 
+                
+                useEffect(() => { 
+                    if(loginModalType) { setEmail(""); setPassword(""); setError(""); } 
+                }, [loginModalType]);
+                
+                // GÜVENLİ GİRİŞ İŞLEMİ
+                const handleSecureLogin = async (e) => {
+                    e.preventDefault();
+                    setError("");
+                    try {
+                        const { signInWithEmailAndPassword } = window.firebaseUtils;
+                        const { firebaseAuth } = window;
+                        await signInWithEmailAndPassword(firebaseAuth, email, password);
+                        setLoginModalType(null); // Başarılıysa modalı kapat
+                    } catch (err) {
+                        setError("Giriş Başarısız: Şifre yanlış veya kullanıcı yok.");
+                    }
+                };
+
                 if (!loginModalType) return null;
                 return (
                     <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-[fadeIn_0.2s_ease-out]">
                         <div className="glass-modal rounded-[32px] shadow-2xl w-full max-w-sm overflow-hidden p-8 relative border-t-white/50">
                             <button onClick={() => setLoginModalType(null)} className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 font-bold p-2 bg-white/30 rounded-full transition-colors">✕</button>
-                            {loginModalType === 'admin' && (
-                                <div className="text-center">
-                                    <div className="bg-emerald-100/80 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-emerald-600 shadow-sm ring-4 ring-emerald-50/50"><Icon name="Lock" size={36}/></div>
-                                    <h2 className="text-2xl font-black text-gray-800 mb-2 tracking-tight">Yönetici Girişi</h2>
-                                    <form onSubmit={handleAdminLogin} className="space-y-6 mt-8">
-                                        <input type="password" autoFocus className="w-full text-center text-3xl tracking-[0.5em] border-2 border-gray-200/80 rounded-2xl p-4 focus:border-emerald-500 outline-none bg-white/70 font-bold text-emerald-900 transition-all focus:bg-white" placeholder="••••" value={password} onChange={e => setPassword(e.target.value)} />
-                                        {error && <p className="text-red-500 text-sm font-medium bg-red-50 p-2 rounded-lg">{error}</p>}
-                                        <button className="w-full bg-emerald-600 text-white py-4 rounded-2xl font-bold hover:bg-emerald-700 transition-colors shadow-lg text-lg">Giriş Yap</button>
-                                    </form>
+                            <div className="text-center">
+                                <div className={`bg-${loginModalType === 'admin' ? 'emerald' : 'lime'}-100/80 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm ring-4 ring-white/50`}>
+                                    <Icon name={loginModalType === 'admin' ? 'Lock' : 'UserSquare'} size={36} className={`text-${loginModalType === 'admin' ? 'emerald' : 'lime'}-700`}/>
                                 </div>
-                            )}
-                            {loginModalType === 'coach' && (
-                                <div className="text-center">
-                                    <div className="bg-lime-100/80 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-lime-700 shadow-sm ring-4 ring-lime-50/50"><Icon name="UserSquare" size={36}/></div>
-                                    <h2 className="text-2xl font-black text-gray-800 mb-6 tracking-tight">Antrenör Girişi</h2>
-                                    {step === 'email' && (
-                                        <form onSubmit={checkEmail} className="space-y-6">
-                                            <div className="text-left"><label className="text-xs font-bold text-gray-500 ml-1 uppercase tracking-wider">E-POSTA ADRESİ</label><div className="relative mt-2"><Icon name="Mail" size={20} className="absolute left-4 top-4 text-gray-400" /><input type="email" required className="w-full border-2 border-gray-200/80 rounded-2xl p-4 pl-12 outline-none focus:border-lime-500 bg-white/70 font-medium text-gray-700 transition-all focus:bg-white" placeholder="ornek@dtk.com" value={email} onChange={e => setEmail(e.target.value)} /></div></div>
-                                            {error && <p className="text-red-500 text-sm font-medium bg-red-50 p-2 rounded-lg">{error}</p>}
-                                            <button className="w-full bg-lime-500 text-white py-4 rounded-2xl font-bold hover:bg-lime-600 transition-colors shadow-lg text-lg">Devam Et</button>
-                                        </form>
-                                    )}
-                                    {step === 'password' && (
-                                        <form onSubmit={verifyPassword} className="space-y-6">
-                                            <p className="text-lg text-gray-600 font-medium">Merhaba, <b className="text-gray-900">{foundInst?.name}</b></p>
-                                            <input type="password" autoFocus className="w-full border-2 border-gray-200/80 rounded-2xl p-4 outline-none focus:border-lime-500 bg-white/70 font-medium text-gray-700 transition-all focus:bg-white text-lg" placeholder="Şifreniz" value={password} onChange={e => setPassword(e.target.value)} />
-                                            {error && <p className="text-red-500 text-sm font-medium bg-red-50 p-2 rounded-lg">{error}</p>}
-                                            <button className="w-full bg-lime-500 text-white py-4 rounded-2xl font-bold hover:bg-lime-600 transition-colors shadow-lg text-lg">Giriş Yap</button>
-                                        </form>
-                                    )}
-                                    {step === 'set-password' && (
-                                        <form onSubmit={setNewPassword} className="space-y-6">
-                                            <div className="bg-yellow-50/80 text-yellow-800 p-4 rounded-2xl text-sm mb-4 border border-yellow-200/50 font-medium">İlk girişiniz (veya sıfırlanmış). Lütfen yeni bir şifre belirleyin.</div>
-                                            <input type="password" required className="w-full border-2 border-gray-200/80 rounded-2xl p-4 outline-none focus:border-lime-500 bg-white/70 font-medium text-gray-700 transition-all focus:bg-white" placeholder="Yeni Şifre" value={password} onChange={e => setPassword(e.target.value)} />
-                                            <input type="password" required className="w-full border-2 border-gray-200/80 rounded-2xl p-4 outline-none focus:border-lime-500 bg-white/70 font-medium text-gray-700 transition-all focus:bg-white" placeholder="Şifre Tekrar" value={confirmPass} onChange={e => setConfirmPass(e.target.value)} />
-                                            {error && <p className="text-red-500 text-sm font-medium bg-red-50 p-2 rounded-lg">{error}</p>}
-                                            <button className="w-full bg-lime-500 text-white py-4 rounded-2xl font-bold hover:bg-lime-600 transition-colors shadow-lg text-lg">Şifreyi Kaydet</button>
-                                        </form>
-                                    )}
-                                </div>
-                            )}
+                                <h2 className="text-2xl font-black text-gray-800 mb-6 tracking-tight">{loginModalType === 'admin' ? 'Yönetici' : 'Antrenör'} Girişi</h2>
+                                <form onSubmit={handleSecureLogin} className="space-y-4">
+                                    <input type="email" required autoFocus className="w-full border-2 border-gray-200/80 rounded-2xl p-4 outline-none focus:border-emerald-500 bg-white/70 font-medium text-gray-700 transition-all focus:bg-white" placeholder="E-posta Adresi" value={email} onChange={e => setEmail(e.target.value)} />
+                                    <input type="password" required className="w-full border-2 border-gray-200/80 rounded-2xl p-4 outline-none focus:border-emerald-500 bg-white/70 font-medium text-gray-700 transition-all focus:bg-white" placeholder="Şifre" value={password} onChange={e => setPassword(e.target.value)} />
+                                    {error && <p className="text-red-500 text-sm font-medium bg-red-50 p-2 rounded-lg">{error}</p>}
+                                    <button className={`w-full bg-${loginModalType === 'admin' ? 'emerald' : 'lime'}-600 text-white py-4 rounded-2xl font-bold hover:opacity-90 transition-colors shadow-lg text-lg`}>Giriş Yap</button>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 );
@@ -692,7 +757,6 @@
                                 <div><div className="font-bold text-lg text-gray-800 tracking-tight">{inst.name}</div><div className="text-sm text-gray-500 font-medium flex items-center gap-2"><Icon name="Mail" size={14} className="text-gray-400"/> {inst.email}</div></div>
                             </div>
                             <div className="flex gap-3">
-                                <button onClick={() => handleResetCoachPassword(inst.id)} className="p-3 text-blue-400 bg-blue-50/80 rounded-xl hover:bg-blue-500 hover:text-white transition-colors shadow-sm border border-blue-100/50" title="Şifreyi Sıfırla"><Icon name="Key" size={20} /></button>
                                 <button onClick={() => handleDeleteCoach(inst.id)} className="p-3 text-red-400 bg-red-50/80 rounded-xl hover:bg-red-500 hover:text-white transition-colors shadow-sm border border-red-100/50"><Icon name="Trash2" size={20} /></button>
                             </div>
                         </div>
@@ -761,7 +825,6 @@
                 );
             };
 
-            // ÖNEMLİ DÜZELTME BURADA: Hooks (Kancalar) yukarıda tanımlandı.
             // "if (!isFirebaseReady)" kontrolünü hook'lardan SONRA, render işleminden ÖNCE yapıyoruz.
             if (!isFirebaseReady) {
                 return (
@@ -877,12 +940,7 @@
                                 <div className="space-y-6">
                                     <div className="p-6 bg-white/60 rounded-3xl border border-white/50 shadow-sm">
                                         <h4 className="text-lg font-bold text-gray-700 mb-4">Şifre Değiştir</h4>
-                                        <form onSubmit={handleChangeAdminPassword} className="space-y-4">
-                                            <input type="password" placeholder="Mevcut Şifre" value={changePassData.current} onChange={e => setChangePassData({...changePassData, current: e.target.value})} className="w-full border-2 border-gray-200/80 p-3 rounded-2xl text-sm outline-none focus:border-emerald-500 bg-white/80 font-medium transition-all focus:bg-white" />
-                                            <input type="password" placeholder="Yeni Şifre" value={changePassData.new} onChange={e => setChangePassData({...changePassData, new: e.target.value})} className="w-full border-2 border-gray-200/80 p-3 rounded-2xl text-sm outline-none focus:border-emerald-500 bg-white/80 font-medium transition-all focus:bg-white" />
-                                            <input type="password" placeholder="Yeni Şifre (Tekrar)" value={changePassData.confirm} onChange={e => setChangePassData({...changePassData, confirm: e.target.value})} className="w-full border-2 border-gray-200/80 p-3 rounded-2xl text-sm outline-none focus:border-emerald-500 bg-white/80 font-medium transition-all focus:bg-white" />
-                                            <button type="submit" className="w-full bg-emerald-600 text-white py-4 rounded-2xl font-bold text-lg shadow-md hover:bg-emerald-700 transition-colors">Güncelle</button>
-                                        </form>
+                                        <p className="text-sm text-gray-500">Şifre değişikliği için Firebase Console > Authentication bölümünü kullanınız.</p>
                                     </div>
                                     <button onClick={() => setIsSettingsOpen(false)} className="w-full bg-gray-100/80 text-gray-700 py-4 rounded-2xl font-bold text-lg hover:bg-gray-200/80 transition-colors">Kapat</button>
                                 </div>
