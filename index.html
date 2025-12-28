@@ -32,7 +32,6 @@
             onSnapshot 
         } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-        // SENİN GÖNDERDİĞİN BİLGİLER BURAYA EKLENDİ
         const firebaseConfig = {
             apiKey: "AIzaSyCsOde5aNv6HnNJMXtPLlGisXF_zXp3E5o",
             authDomain: "diyarbakirtenis-254b1.firebaseapp.com",
@@ -49,10 +48,9 @@
         try {
             app = initializeApp(firebaseConfig);
             db = getFirestore(app);
-            console.log("Firebase bağlantısı başarılı: diyarbakirtenis-254b1");
+            console.log("Firebase bağlantısı başarılı.");
         } catch (error) {
             console.error("Firebase başlatma hatası:", error);
-            alert("Veritabanı bağlantı hatası! İnternet bağlantınızı kontrol edin.");
         }
 
         // React kodunun kullanacağı global değişkenleri tanımlıyoruz
@@ -445,31 +443,8 @@
 
         // --- ANA UYGULAMA BİLEŞENİ ---
         const App = () => {
+            // TÜM HOOK'LAR BURADA TANIMLANMALI - SIRASI DEĞİŞMEMELİ
             const [isFirebaseReady, setIsFirebaseReady] = useState(false);
-
-            useEffect(() => {
-                // Eğer firebase zaten hazırsa (script React'ten önce çalıştıysa)
-                if (window.firebaseUtils && window.firebaseDb) {
-                    setIsFirebaseReady(true);
-                }
-
-                // Event listener ekle (React önce çalışırsa script'in bitmesini bekle)
-                const handleReady = () => setIsFirebaseReady(true);
-                window.addEventListener('firebase-ready', handleReady);
-                return () => window.removeEventListener('firebase-ready', handleReady);
-            }, []);
-
-            if (!isFirebaseReady) {
-                return (
-                    <div className="min-h-screen bg-tennis-court flex items-center justify-center">
-                        <div className="text-emerald-800 font-bold text-xl animate-pulse flex flex-col items-center gap-4">
-                            <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-                            Yükleniyor...
-                        </div>
-                    </div>
-                );
-            }
-         
             const [userRole, setUserRole] = useState(() => { const saved = localStorage.getItem('dtk_session_v1'); return saved ? JSON.parse(saved).role : null; });
             const [currentCoach, setCurrentCoach] = useState(() => { const saved = localStorage.getItem('dtk_session_v1'); return saved ? JSON.parse(saved).name : null; });
             const [appLogo, setAppLogo] = useState("https://cdn-icons-png.flaticon.com/512/33/33736.png");
@@ -505,11 +480,19 @@
             const [newInstName, setNewInstName] = useState("");
             const [newInstEmail, setNewInstEmail] = useState("");
             const [editingGroup, setEditingGroup] = useState(null);
-            
-            // YENİ: Öğrenci Düzenleme State'i
             const [editingStudent, setEditingStudent] = useState(null);
 
-            // Firebase Dinleyicileri
+            // Firebase Hazırlık Hook'u
+            useEffect(() => {
+                if (window.firebaseUtils && window.firebaseDb) {
+                    setIsFirebaseReady(true);
+                }
+                const handleReady = () => setIsFirebaseReady(true);
+                window.addEventListener('firebase-ready', handleReady);
+                return () => window.removeEventListener('firebase-ready', handleReady);
+            }, []);
+
+            // Veri Çekme Hook'u
             useEffect(() => {
                 const unsubscribers = [];
 
@@ -560,6 +543,7 @@
                 };
             }, [isFirebaseReady]);
 
+            // Yardımcı Fonksiyonlar (Hooks dışı)
             const validHours = ["11:00", "12:00", "13:00", "14:00", "15:00", "16:00"];
             const askConfirmation = (message, action) => { setConfirmModal({ isOpen: true, message, onConfirm: action }); };
             const closeConfirmModal = () => { setConfirmModal({ isOpen: false, message: '', onConfirm: null }); };
@@ -592,18 +576,15 @@
             const handlePhotoChange = (e) => { const file = e.target.files[0]; if(file) { const reader = new FileReader(); reader.onloadend = () => setNewStudentPhoto(reader.result); reader.readAsDataURL(file); } };
             const handleAddPlayerFromDetail = (e) => { e.preventDefault(); if(newStudentName.trim()) addPlayerLogic(activeGroup.id, newStudentName.trim(), null, newStudentAge, newStudentPhone, null); setNewStudentName(""); setNewStudentAge(""); setNewStudentPhone(""); };
             
-            // YENİ: Öğrenci Düzenleme ve Ekleme Mantığı Birleşti
             const handleAddStudentGlobal = async (e) => { 
                 e.preventDefault(); 
                 if(newStudentName.trim()) { 
                     if (editingStudent) {
-                        // DÜZENLEME MODU
                         const studentRef = window.firebaseUtils.doc(window.firebaseDb, 'students', editingStudent.id.toString());
                         const updateData = { name: newStudentName.trim(), age: newStudentAge, phone: newStudentPhone };
                         if (newStudentPhoto) updateData.photo = newStudentPhoto;
                         await window.firebaseUtils.updateDoc(studentRef, updateData);
                     } else {
-                        // YENİ EKLEME MODU
                         const newId = Date.now(); 
                         if (selectedGroupIdForStudent) await addPlayerLogic(selectedGroupIdForStudent, newStudentName.trim(), newId, newStudentAge, newStudentPhone, newStudentPhoto); 
                         else { 
@@ -824,6 +805,19 @@
                     </div>
                 );
             };
+
+            // ÖNEMLİ DÜZELTME BURADA: Hooks (Kancalar) yukarıda tanımlandı.
+            // "if (!isFirebaseReady)" kontrolünü hook'lardan SONRA, render işleminden ÖNCE yapıyoruz.
+            if (!isFirebaseReady) {
+                return (
+                    <div className="min-h-screen bg-tennis-court flex items-center justify-center">
+                        <div className="text-emerald-800 font-bold text-xl animate-pulse flex flex-col items-center gap-4">
+                            <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+                            Yükleniyor...
+                        </div>
+                    </div>
+                );
+            }
 
             // Giriş Yapılmamışsa
             if (!userRole) return <><WelcomeScreen onAdminClick={() => setLoginModalType('admin')} onCoachClick={() => setLoginModalType('coach')} logoUrl={appLogo} /><LoginPopup /></>;
